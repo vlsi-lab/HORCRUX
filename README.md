@@ -74,20 +74,20 @@ This repository currently supports:
 
 In particular:
 
-- **ML-KEM**    [Kyber](https://github.com/pq-crystals/kyber)  
+- **ML-KEM**    ([Kyber](https://github.com/pq-crystals/kyber))
 This repository contains the official reference implementation of the [Kyber](https://www.pq-crystals.org/kyber/) key encapsulation mechanism.
 Kyber has been selected for standardization in [round 3](https://csrc.nist.gov/Projects/post-quantum-cryptography/round-3-submissions) 
 of the [NIST PQC](https://csrc.nist.gov/projects/post-quantum-cryptography) standardization project.
 
 
-- **ML-DSA**    [Dilithium](https://github.com/pq-crystals/dilithium)  
+- **ML-DSA**    ([Dilithium](https://github.com/pq-crystals/dilithium))
 This repository contains the official reference implementation of the [Dilithium](https://www.pq-crystals.org/dilithium/) signature scheme.
 Dilithium is standardized as [FIPS 204](https://csrc.nist.gov/pubs/fips/204/final).
 
-- **HQC**       [HQC](https://gitlab.com/pqc-hqc/hqc/)
+- **HQC**       ([HQC](https://gitlab.com/pqc-hqc/hqc/))
 This repository provides the official implementation of [HQC](https://pqc-hqc.org), a code-based Key Encapsulation Mechanism (KEM) whose security is based on the hardness of solving the Quasi-Cylic Syndrome Decoding (QCSD) problem. HQC is one of the selected algorithms from the [NIST's Post-Quantum Cryptography Standardization Project](https://csrc.nist.gov/projects/post-quantum-cryptography) (last version of 22/08/2025).
 
-- **SLH-DSA**  
+- **SLH-DSA**  (SPHINCS+)
 This repository contains the software that accompanies the [SPHINCS+ submission](https://sphincs.org/) to [NIST's Post-Quantum Cryptography](https://csrc.nist.gov/Projects/Post-Quantum-Cryptography) project.
 
 Each algorithm comes with a **self-contained KAT test**, adapted from the **official reference implementation submitted to NIST**.  
