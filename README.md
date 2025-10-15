@@ -31,6 +31,15 @@ make mcu-gen
 make x_heep-sync
 ```
 
+**Next steps**
+
+- See **[Software Structure (sw/)](#-software-structure-sw)** to learn which apps you can build and how.
+
+- See **[Simulation Set-Up](#-simulation-set-up)** to build and run the simulation.
+
+- See **[FPGA Set-Up](#-fpga-set-up)** to build and run on FPGA.
+
+
 
 ## 💾 Software Structure (sw/)
 
@@ -115,6 +124,10 @@ Run simulation with QuestaSim
 ```
 make questasim-sim
 ```
+
+## 💾 Simulation Set Up
+
+## 💾 FPGA Set Up
 
 
 
