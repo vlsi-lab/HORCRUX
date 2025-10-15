@@ -91,7 +91,6 @@ This repository provides the official implementation of [HQC](https://pqc-hqc.or
 This repository contains the software that accompanies the [SPHINCS+ submission](https://sphincs.org/) to [NIST's Post-Quantum Cryptography](https://csrc.nist.gov/Projects/Post-Quantum-Cryptography) project.
 
 Each algorithm comes with a **self-contained KAT test**, adapted from the **official reference implementation submitted to NIST**.  
-
 Each test provides:
 - **Key generation** (`keygen`)  
 - **Encapsulation / Signing** (`encaps` / `sign`)  
@@ -123,23 +122,17 @@ make questasim-sim
 
 
 ### 💾 Code Size Comparison
-| **Algorithm** | **Code Size<br>(Orig.) [KB]** | **Code Size<br>(Opt.) [KB]** |
-|-------------|-------------------------------|-------------------------------|
-| ml-kem-512           |  27,564   |   24,004 [x1.15]   |
-| ml-kem-768           |  27,400   |   23,572 [x1.16]   |
-| ml-kem-1024          |  28,008   |   24,280 [x1.15]   |
-| HQC-1                |  37,606   |   33,654 [x1.12]   |
-| HQC-3                |  38,838   |   34,870 [x1.11]   |
-| HQC-5                |  45,426   |   41,430 [x1.10]   |
+| **Algorithm** | **Code Size<br>(Orig.) [KB]** | **Code Size<br>(Opt.) [KB]** |  **Algorithm** | **Code Size<br>(Orig.) [KB]** | **Code Size<br>(Opt.) [KB]** |
+|-------------|-------------------------------|-------------------------------|-------------|-------------------------------|-------------------------------|
+| ml-kem-512           |  27,564   |   24,004 [x1.15]   | SPHINCS+-128f-robust |  28,452   |   24,972 [x1.14]   |
+| ml-kem-768           |  27,400   |   23,572 [x1.16]   | SPHINCS+-128f-simple |  27,624   |   24,140 [x1.14]   |
+| ml-kem-1024          |  28,008   |   24,280 [x1.15]   | SPHINCS+-192f-robust |  28,416   |   24,936 [x1.14]   |
+| HQC-1                |  37,606   |   33,654 [x1.12]   | SPHINCS+-192f-simple |  27,596   |   24,116 [x1.14]   |
+| HQC-3                |  38,838   |   34,870 [x1.11]   | SPHINCS+-256f-robust |  28,892   |   25,408 [x1.14]   |
+| HQC-5                |  45,426   |   41,430 [x1.10]   | SPHINCS+-256f-simple |  28,000   |   24,516 [x1.14]   |
 | ML-DSA-2             |  32,704   |   28,472 [x1.15]   |
 | ML-DSA-3             |  32,424   |   28,688 [x1.13]   |
 | ML-DSA-5             |  32,072   |   28,416 [x1.13]   |
-| SPHINCS+-128f-robust |  28,452   |   24,972 [x1.14]   |
-| SPHINCS+-128f-simple |  27,624   |   24,140 [x1.14]   |
-| SPHINCS+-192f-robust |  28,416   |   24,936 [x1.14]   |
-| SPHINCS+-192f-simple |  27,596   |   24,116 [x1.14]   |
-| SPHINCS+-256f-robust |  28,892   |   25,408 [x1.14]   |
-| SPHINCS+-256f-simple |  28,000   |   24,516 [x1.14]   |
 
 ### ⚙️ PQC Benchmark 
 
