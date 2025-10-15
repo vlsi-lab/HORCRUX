@@ -55,14 +55,14 @@ Available values for TESTS include:
 | `montg_k` | `ntt_dilithium` | `ntt_kyber` | `rej_uniform` |
 
 
-## 🔐 Running PQC Algorithms
+### 🔐 Running PQC Algorithms
 
 To run a complete PQC algorithm (KEM or DS):
 ```
 make app-v1-KEM-ML-KEM-ml-kem-512 SCHEME=KEM ALG=ML-KEM VERSION=ml-kem-512 V=v1
 ```
 
-### 🧩 Supported PQC Configurations
+This repository currently supports:
 
 | **SCHEME** | **ALG**    | **VERSION**                                                                 |
 |-------------|-------------|----------------------------------------------------------------------------|
@@ -72,7 +72,7 @@ make app-v1-KEM-ML-KEM-ml-kem-512 SCHEME=KEM ALG=ML-KEM VERSION=ml-kem-512 V=v1
 | **DS**      | SLH-DSA     | `SPHINCS+-128f-robust`, `SPHINCS+-128f-simple`, `SPHINCS+-192f-robust`,   |
 |             |             | `SPHINCS+-192f-simple`, `SPHINCS+-256f-robust`, `SPHINCS+-256f-simple`    |
 
-This repository currently supports:
+In particular:
 
 - **ML-KEM**    [Kyber](https://github.com/pq-crystals/kyber)  
 This repository contains the official reference implementation of the [Kyber](https://www.pq-crystals.org/kyber/) key encapsulation mechanism.
