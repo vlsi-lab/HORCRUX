@@ -36,9 +36,9 @@ make x_heep-sync
 
 The sw/ directory contains all software components, including:
 
-- Instruction-level tests for verifying custom operations and arithmetic units. See [how to run them](#running-single-instruction-tests).
+- Instruction-level tests for verifying custom operations and arithmetic units. See [how to run them](#-running-single-instruction-tests).
 
-- PQC algorithm tests for full key generation, encapsulation/decapsulation, and signature operations. See [how to run them](#running-pqc-algorithms).
+- PQC algorithm tests for full key generation, encapsulation/decapsulation, and signature operations. See [how to run them](#-running-pqc-algorithms).
 
 ### 🧪 Running Single Instruction Tests
 
@@ -53,7 +53,6 @@ Available values for TESTS include:
 | `cbd3` | `compress` | `gf_carryless` | `intt_dilithium` |
 | `intt_kyber` | `karats` | `keccak` | `montg_d` |
 | `montg_k` | `ntt_dilithium` | `ntt_kyber` | `rej_uniform` |
-
 
 
 ## 🔐 Running PQC Algorithms
