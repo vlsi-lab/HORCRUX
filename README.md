@@ -10,7 +10,6 @@ It provides a unified environment to design, simulate, and test cryptographic ac
 HORCRUX/
 ├── ci/scripts/     # Continuous integration and automation scripts
 ├── config/         # Configuration files for builds and SoC setup
-├── dis/            # Disassembly tools and binaries for inspection
 ├── hw/             # Hardware modules (RTL, accelerators, and interfaces)
 ├── scripts/        # Build and utility scripts
 ├── sw/             # Software tests, applications, and PQC implementations
@@ -26,28 +25,22 @@ git clone <your_repo_url>
 cd horcrux
 ```
 
-Generate MCU sources
+Generate MCU sources and modify some of the X-HEEP files:
 ```
 make mcu-gen
-```
-Sync with the X-HEEP platform
-```
 make x_heep-sync
 ```
-Run simulation with QuestaSim
-```
-make questasim-sim
-```
+
 
 ## 💾 Software Structure (sw/)
 
 The sw/ directory contains all software components, including:
 
-Instruction-level tests for verifying custom operations and arithmetic units
+- Instruction-level tests for verifying custom operations and arithmetic units. See [how to run them](#running-single-instruction-tests).
 
-PQC algorithm tests for full key generation, encapsulation/decapsulation, and signature operations
+- PQC algorithm tests for full key generation, encapsulation/decapsulation, and signature operations. See [how to run them](#running-pqc-algorithms).
 
-## 🧪 Running Single Instruction Tests
+### 🧪 Running Single Instruction Tests
 
 You can run an individual instruction test with:
 ```
@@ -119,8 +112,15 @@ or
 ```
 
 
-## 📊 Results
 
+Run simulation with QuestaSim
+```
+make questasim-sim
+```
+
+
+
+## 📊 Results
 
 
 ### 💾 Code Size Comparison
