@@ -125,9 +125,9 @@ Run simulation with QuestaSim
 make questasim-sim
 ```
 
-## 💾 Simulation Set Up
+## 📟 Simulation Set Up
 
-## 💾 FPGA Set Up
+## 🔧 FPGA Set Up
 
 
 
