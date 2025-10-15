@@ -1,0 +1,343 @@
+CAPI=2:
+
+# Copyright 2025 PoliTO
+# Solderpad Hardware License, Version 2.1, see LICENSE.md for details.
+# SPDX-License-Identifier: Apache-2.0 WITH SHL-2.1
+
+name: vlsi:polito:mcu_horcrux
+description: Integration framework of horcrux in MCU
+
+filesets:
+  horcrux:
+    depend:
+    - openhwgroup.org:ip:cv32e40x
+    - esl_epfl:ip:cv32e40px
+    files:
+    - hw/rtl/horcrux/include/horcrux_pkg.sv
+    - hw/rtl/horcrux/commit_stage.sv
+    - hw/rtl/horcrux/id_stage.sv
+    - hw/rtl/horcrux/rol32.v
+    - hw/rtl/horcrux/cbd.sv
+    - hw/rtl/horcrux/modular_reduction.sv
+    - hw/rtl/horcrux/gf_carryless_mul.sv
+    - hw/rtl/horcrux/compress.sv
+    - hw/rtl/horcrux/karats.sv
+    - hw/rtl/horcrux/bcop32.sv
+    - hw/rtl/horcrux/horcrux.sv
+    - hw/rtl/horcrux/horcrux_top.sv
+    - hw/rtl/horcrux/horcrux_wrapper.sv
+    file_type: systemVerilogSource   
+
+  horcrux_x_heep:
+    depend:
+    - x-heep::packages
+    - openhwgroup.org:systems:core-v-mini-mcu
+    files:
+    - hw/rtl/horcrux_x_heep_pkg.sv
+    - hw/rtl/horcrux_x_heep_top.sv
+    file_type: systemVerilogSource
+
+  x_heep_system:
+    depend:
+    - x-heep::packages
+    - x-heep:ip:pad_control
+    files:
+    - hw/rtl/cv32e40px_core_v_xif_pkg.sv
+    - hw/rtl/cv32e40px_if_xif.sv
+    - hw/vendor/esl_epfl_x_heep/hw/system/x_heep_system.sv
+    - hw/vendor/esl_epfl_x_heep/hw/system/pad_ring.sv
+    file_type: systemVerilogSource
+
+  rtl-fpga:
+   depend:
+    - openhwgroup.org:systems:core-v-mini-mcu
+    - openhwgroup.org:systems:core-v-mini-mcu-fpga
+   files:
+   - hw/fpga/xilinx_horcrux_x_heep_top.sv  
+   - hw/vendor/esl_epfl_x_heep/hw/fpga/sram_wrapper.sv
+   file_type: systemVerilogSource
+
+  ip-asic:
+    depend:
+    - technology::prim_mytech
+    - x-heep::packages
+    - pulp-platform.org::common_cells
+    - openhwgroup.org:systems:core-v-mini-mcu
+    - x-heep:ip:pad_control
+
+  tb-harness_x_heep:
+    files:
+    - tb/tb_util.svh: {is_include_file: true}
+    - tb/testharness.sv
+    - hw/vendor/esl_epfl_x_heep/tb/ext_xbar.sv
+    - hw/vendor/esl_epfl_x_heep/tb/ext_bus.sv 
+    file_type: systemVerilogSource
+
+  systemverilog_only_simjtag:
+    depend:
+    - pulp-platform.org::pulpissimo_simjtag
+
+  uartdpi:
+    depend:
+    - lowrisc:dv_dpi:uartdpi
+
+  systemverilog_only_uart:
+    files:
+    - hw/vendor/esl_epfl_x_heep/hw/vendor/lowrisc_opentitan/hw/dv/dpi/uartdpi/uartdpi.sv
+    file_type: systemVerilogSource
+
+  remote_bitbang_dpi:
+    depend:
+    - pulp-platform.org::pulpissimo_remote_bitbang
+
+  cypress_flash:
+    depend:
+    - ::spiflash:0
+
+  # Scripts for hooks
+  pre_build_remote_bitbang:
+    files:
+    - scripts/sim/compile_remote_bitbang.sh
+    file_type: user
+
+  pre_build_uartdpi:
+    files:
+    - scripts/sim/compile_uart_dpi.sh
+    file_type: user
+
+  pre_patch_modelsim_Makefile:
+    files:
+    - scripts/sim/modelsim/patch_modelsim_Makefile.py
+    file_type: user
+
+  tb-verilator_x_heep:
+    files:
+    - tb/tb_top.cpp
+    file_type: cppSource
+
+  tb-sv_x_heep:
+    files:
+    - hw/vendor/esl_epfl_x_heep/tb/tb_top.sv
+    file_type: systemVerilogSource
+
+  # rtl-simulation:
+  #   depend:
+  #   - pulp-platform.org::tech_cells_generic
+  #   files:
+  #   - hw/vendor/esl_epfl_x_heep/hw/simulation/sram_wrapper.sv
+  #   - hw/vendor/esl_epfl_x_heep/hw/simulation/pad_cell_bypass_input.sv
+  #   - hw/vendor/esl_epfl_x_heep/hw/simulation/pad_cell_bypass_output.sv
+  #   - hw/vendor/esl_epfl_x_heep/hw/simulation/pad_cell_inout.sv
+  #   - hw/vendor/esl_epfl_x_heep/hw/simulation/pad_cell_input.sv
+  #   - hw/vendor/esl_epfl_x_heep/hw/simulation/pad_cell_output.sv
+  #   file_type: systemVerilogSource
+
+parameters:
+  COREV_PULP:
+    datatype: int
+    paramtype: vlogparam
+    description: |
+      Enables COREV_PULP custom RISC-V extension on the CV32E40P core. Admitted values: 1|0.
+    default: 0
+  FPU:
+    datatype: int
+    paramtype: vlogparam
+    description: |
+      Enables RV32F RISC-V extension on the CV32E40P core. Admitted values: 1|0.
+    default: 0
+  JTAG_DPI:
+    datatype: int
+    paramtype: vlogparam
+    description: |
+      Enables testbench JTAG DIPs. Admitted values: 1|0.
+    default: 0
+  X_EXT:
+    datatype: int
+    paramtype: vlogparam
+    description: |
+      Enables CORE-V-XIF interface for the CV32E40X and CV32E40PX cores. Admitted values: 1|0.
+    default: 0
+  USE_EXTERNAL_DEVICE_EXAMPLE:
+    datatype: int
+    paramtype: vlogparam
+    description: |
+      Enables testbench modules compilation. Admitted values: 1|0.
+    default: 1
+  USE_UPF:
+    datatype: bool
+    paramtype: vlogdefine
+    description: |
+      Enables simulation with UPF with Modelsim/VCS
+  REMOVE_OBI_FIFO:
+    datatype: bool
+    paramtype: vlogdefine
+    description: |
+      Remove the FIFO between the BUS and the peripherals subsystems
+  SYNTHESIS:
+    datatype: bool
+    paramtype: vlogdefine
+    default: false
+  VERILATOR: #used by SV2V
+    datatype: bool
+    paramtype: vlogdefine
+    default: false
+  FPGA_NETLIST:
+    datatype: bool
+    paramtype: vlogdefine
+    default: false
+  FPGA_ZCU104:
+    datatype: bool
+    paramtype: vlogdefine
+    default: false
+  FPGA_ZCU102:
+    datatype: bool
+    paramtype: vlogdefine
+    default: false
+  # Make the parameter known to FuseSoC to enable overrides from the
+  # command line. If not overwritten, use the generic technology library.
+  PRIM_DEFAULT_IMPL:
+    datatype: str
+    paramtype: vlogdefine
+    description: Primitives implementation to use, e.g. "prim_pkg::ImplGeneric".
+    default: prim_pkg::ImplGeneri
+scripts:
+  pre_build_remote_bitbang:
+    cmd:
+    - sh
+    - ../../../scripts/sim/compile_remote_bitbang.sh
+  pre_build_uartdpi:
+    cmd:
+    - sh
+    - ../../../scripts/sim/compile_uart_dpi.sh
+  pre_patch_modelsim_Makefile:
+    cmd:
+    - python
+    - ../../../scripts/sim/modelsim/patch_modelsim_Makefile.py
+
+targets:
+  default: &default_target
+    filesets:
+    - horcrux
+    - horcrux_x_heep
+    - x_heep_system
+    toplevel: [horcrux_x_heep_top]
+
+  sim:
+    <<: *default_target
+    #filesets:
+    #- horcrux_x_heep
+    default_tool: modelsim
+    filesets_append:
+    - tb-harness_x_heep
+    
+    - tool_verilator? (uartdpi)
+    - tool_modelsim? (systemverilog_only_uart)
+    - tool_verilator? (files_verilator_waiver_x_heep)
+    - tool_verilator? (remote_bitbang_dpi)
+    - tool_modelsim? (systemverilog_only_simjtag)
+    - tool_modelsim? (cypress_flash)
+
+    - tool_modelsim? (pre_build_remote_bitbang)
+    - tool_modelsim? (pre_build_uartdpi)
+    - tool_modelsim? (pre_patch_modelsim_Makefile)
+    - tool_verilator? (tb-verilator_x_heep)
+    - tool_modelsim? (tb-sv_x_heep)
+    - "!integrated_heep? (x_heep_system)"
+    toplevel:
+    - tool_modelsim? (tb_top)
+    - tool_verilator? (testharness)
+    hooks:
+      pre_build:
+        - tool_modelsim? (pre_build_uartdpi)
+        - tool_modelsim? (pre_build_remote_bitbang)
+        - tool_modelsim? (pre_patch_modelsim_Makefile) # this is required by Questa 2020 on
+    parameters:
+    - use_cv32e40p_corev_pulp? (COREV_PULP=1)
+    - "!use_cv32e40p_corev_pulp? (COREV_PULP=0)"
+    - use_jtag_dpi? (JTAG_DPI=1)
+    - "!use_jtag_dpi? (JTAG_DPI=0)"
+    tools:
+      modelsim:
+        vlog_options:
+        - -override_timescale 1ns/1ps
+        - -suppress vlog-2583
+        - -suppress vlog-2577
+        - -pedanticerrors
+        - -define MODELSIM
+        vsim_options:
+        - -sv_lib ../../../hw/vendor/esl_epfl_x_heep/hw/vendor/lowrisc_opentitan/hw/dv/dpi/uartdpi/uartdpi
+        - -sv_lib ../../../hw/vendor/esl_epfl_x_heep/hw/vendor/pulp_platform_pulpissimo/rtl/tb/remote_bitbang/librbs
+        - -voptargs=+acc
+      verilator:
+        mode: cc
+        verilator_options:
+          - '--cc'
+          - '--trace'
+          - '--trace-fst'
+          - '--trace-structs'
+          - '--trace-params'
+          - '--trace-max-array 1024'
+          - '--x-assign unique'
+          - '--x-initial unique'
+          - '--exe tb_top.cpp'
+          - '-CFLAGS "-std=c++11 -Wall -g -fpermissive"'
+          - '-LDFLAGS "-pthread -lutil -lelf"'
+          - "-Wall"
+
+  asic_synthesis:
+    <<: *default_target
+    default_tool: design_compiler
+    description: Design Compiler Script
+    parameters:
+    - PRIM_DEFAULT_IMPL=prim_pkg::your_target_technology
+    - COREV_PULP
+    - X_EXT
+    - FPU
+    - SYNTHESIS=true
+    - REMOVE_OBI_FIFO
+    filesets_append:
+    - ip-asic
+    toplevel: [horcrux_x_heep_top]
+    tools:
+      design_compiler:
+        script_dir:
+        - ../../../scripts/synthesis/dc_shell
+        report_dir:
+        - report
+        dc_script:
+        - dc_script.tcl
+
+  zcu104:
+    <<: *default_target
+    default_tool: vivado
+    description: ZCU104 Evaluation Board
+    filesets_append:
+    - tb-harness_x_heep
+    - rtl-fpga
+    parameters_append:
+    - SYNTHESIS=true
+    - FPGA_ZCU104=true
+    tools:
+      vivado:
+        part: xczu7ev-ffvc1156-2-e
+        board_part: xilinx.com:zcu104:part0:1.0
+        board_repo_paths: [../../../hw/vendor/esl_epfl_x_heep/hw/fpga/board_files/vendor/esl_epfl_zcu104_board_files]
+    toplevel: [xilinx_horcrux_x_heep_top]
+
+  zcu102:
+    <<: *default_target
+    default_tool: vivado
+    description: ZCU102 Evaluation Board
+    filesets_append:
+    - tb-harness_x_heep
+    - rtl-fpga
+    parameters:
+    - SYNTHESIS=true
+    - FPGA_ZCU102=true
+    tools:
+      vivado:
+        part: xczu9eg-ffvb1156-2-e
+        board_part: xilinx.com:zcu102:part0:3.3
+        board_repo_paths: [../../../hw/vendor/esl_epfl_x_heep/hw/fpga/board_files/vendor/zcu102]
+    toplevel: [xilinx_horcrux_x_heep_top]    
+

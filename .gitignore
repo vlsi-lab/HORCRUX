@@ -1,0 +1,44 @@
+# Logs and temporary files
+*~
+*.swp
+*.cdslck
+*.cdslck.*
+*.~lock.*
+layout.oa.*.oacache
+*.log
+build/
+*.so
+*.hex
+*.elf
+*.dis
+*.do
+*.cache
+*.jou
+*.csv
+*.str
+
+# Python outputs
+**/__pycache__
+
+# Questasim files
+transcipt
+*.wlf
+
+# Synthesis outputs
+synthesis/output_*
+synthesis/last_output/
+
+# disassembly folder
+dis/
+
+# User-specific files
+private/
+.vscode/
+.Xil/
+*.txt
+
+# Tech files
+*.db
+*.lib
+*.lef
+*.gds
