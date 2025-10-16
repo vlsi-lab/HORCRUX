@@ -118,18 +118,69 @@ or
 #define TEST_SIGN_OPEN  1
 ```
 
+The **PQC** directory contains three main subfolders, each corresponding to a different version of the applications:
+
+| **Folder** | **Description** |
+|-------------|-----------------|
+| **v1** | Baseline software-only version of all PQC algorithms, without any hardware acceleration. |
+| **v2** | Optimized version of the algorithms, where the user can optionally enable custom hardware instructions. This is controlled by editing the appropriate `<algorithm_name>_instructions.h` file located in the `include/` subfolder. |
+| **v3** | Profiling version used to benchmark internal functions of each algorithm, such as **key generation**, **encapsulation/signing**, and **decapsulation/verification**. |
+
+---
 
 
-Run simulation with QuestaSim
+The helper script [`scripts/compile_apps.sh`](./scripts/compile_apps.sh) can be used to automate the build and execution of all PQC applications.
+
+This script simplifies the process of compiling and running individual or multiple PQC algorithms. It supports both **single-app** and **batch (all-mode)** execution.
+
+Examples:
+```bash
+# Compile ML-KEM (Kyber) for version v2, skip run phase
+./compile_apps.sh -V v2 -S KEM -A ML-KEM -R ml-kem-512 --no-run
+
+# Compile HQC-3 app only
+./compile_apps.sh -V v3 -S KEM -A HQC -R HQC-3 --no-run
+
+# Batch mode: compile all apps for v1 (no execution)
+./compile_apps.sh -V v1 --all --no-run
+```
+
+Optional flags let you control test phases in `main.c`:
+```bash
+--key {0|1}   Enable/disable key generation
+--enc {0|1}   Enable/disable encapsulation or signing
+--dec {0|1}   Enable/disable decapsulation or verification
+```
+Further details are included in the script.
+
+## 📟 Simulation Set Up
+Set up Questasim environment:
 ```
 make questasim-sim
 ```
+And then run the application of your choice:
+```
+make run-v1-KEM-ML-KEM-ml-kem-512 SCHEME=KEM ALG=ML-KEM VERSION=ml-kem-512 V=v1
+```
 
-## 📟 Simulation Set Up
+Also in this case you can use the helper script [`scripts/compile_apps.sh`](./compile_apps.sh).
+```
+# Run an already compiled ML-KEM-512 app
+./compile_apps.sh -V v2 -S KEM -A ML-KEM -R ml-kem-512 --no-app
+
+# Batch mode: compile and run all v2 apps, continuing even on errors
+./compile_apps.sh -V v2 --all --keep-going
+```
 
 ## 🔧 FPGA Set Up
-
-
+To run the synthesis and implementation on Vivado for the ZCU102 or ZCU104 boards:
+```
+make vivado-fpga FPGA_BOARD=<zcu102|zcu104>
+```
+Remember to also compile the apps consistently:
+```
+make app-v1-KEM-ML-KEM-ml-kem-512 SCHEME=KEM ALG=ML-KEM VERSION=ml-kem-512 V=v1 TARGET=<zcu102|zcu104>
+```
 
 ## 📊 Results
 
@@ -170,6 +221,7 @@ make questasim-sim
 ## 📄 License
 
 This repository follows the licensing terms of the respective reference implementations used as the starting point. Please check individual algorithm directories for specific license details.
+
 
 ## 👥 Authors
 
