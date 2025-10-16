@@ -2,8 +2,6 @@
 
 ## ML-KEM
 
-
-
 ## ML-KEM-512
 ```bash
 make app-v1-KEM-ML-KEM-ml-kem-512 SCHEME=KEM ALG=ML-KEM VERSION=ml-kem-512 V=v1

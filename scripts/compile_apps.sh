@@ -99,7 +99,7 @@ pause_if_tty() {
 
 
 # --- Validate version ---
-[[ "$V" =~ ^v[1-4]$ ]] || { echo "Error: -V must be v1|v2|v3"; exit 1; }
+[[ "$V" =~ ^v[1-3]$ ]] || { echo "Error: -V must be v1|v2|v3"; exit 1; }
 
 # --- Optional main.c edits ---
 do_sed_define () {
