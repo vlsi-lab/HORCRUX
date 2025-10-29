@@ -222,6 +222,15 @@ make app-v1-KEM-ML-KEM-ml-kem-512 SCHEME=KEM ALG=ML-KEM VERSION=ml-kem-512 V=v1 
 
 This repository follows the licensing terms of the respective reference implementations used as the starting point. Please check individual algorithm directories for specific license details.
 
+# 📎Reference
+To cite our paper:   
+@misc{cryptoeprint:2025/1934,  
+      author = {Alessandra Dolmeta and Valeria Piscopo and Guido Masera and Maurizio Martina and Michael Hutter},  
+      title = {{HORCRUX} - A Lightweight {PQC}-{RISC}-V {eXtension} Architecture},   
+      howpublished = {Cryptology {ePrint} Archive, Paper 2025/1934},  
+      year = {2025},  
+      url = {https://eprint.iacr.org/2025/1934}  
+}  
 
 ## 👥 Authors
 
