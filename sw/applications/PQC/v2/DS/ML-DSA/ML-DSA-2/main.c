@@ -11,7 +11,6 @@
 //
 ///////////////////////////////////////////////////////////////////////////////////
 
-
 #include <stddef.h>
 #include <stdint.h>
 #include <stdio.h>
@@ -61,7 +60,7 @@ int main(void)
     size_t smlen, mlen1;
 
     unsigned cycles_keygen, cycles_sign, cycles_sign_open;
-    
+
     #if PERF_CNT_CYCLES == 1
         CSR_CLEAR_BITS(CSR_REG_MCOUNTINHIBIT, 0x1);
         CSR_WRITE(CSR_REG_MCYCLE, 0);
@@ -97,7 +96,6 @@ int main(void)
             CSR_WRITE(CSR_REG_MCYCLE, 0);
         #endif
         crypto_sign_keypair(pk, sk, seed_keygen);
-
         #if PERF_CNT_CYCLES == 1
             CSR_READ(CSR_REG_MCYCLE, &cycles_keygen);
             printf("Keygen cycles: %u\n", cycles_keygen);
@@ -128,7 +126,7 @@ int main(void)
             CSR_WRITE(CSR_REG_MCYCLE, 0);
         #endif
         crypto_sign(sm, &smlen, m, 33, NULL, 0, sk, seed_sign);
-        
+
         #if PERF_CNT_CYCLES == 1
             CSR_READ(CSR_REG_MCYCLE, &cycles_sign);
             printf("Sign cycles: %d\n", cycles_sign);

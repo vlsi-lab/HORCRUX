@@ -11,6 +11,7 @@
 //
 ///////////////////////////////////////////////////////////////////////////////////
 
+
 #ifndef DILITHIUM2_INSTRUCTIONS_H
 #define DILITHIUM2_INSTRUCTIONS_H
 
@@ -21,11 +22,7 @@
 #define ENABLE_DILITHIUM_INVNTT        1
 #define ENABLE_DILITHIUM_NTT           1
 #define ENABLE_KECCAK                  1
-#define ENABLE_DILITHIUM_CADDQ         1
 #define ENABLE_REJ_UNIFORM             1
 
-#define ENABLE_DILITHIUM_POWER2ROUND   0
-
-#define PROFILING_SIGN                 1
 
 #endif /* dilithium2_INSTRUCTIONS_H */

@@ -118,10 +118,7 @@ int crypto_sign_signature(uint8_t *sig, size_t *siglen,
     uint32_t idx_leaf;
     uint32_t wots_addr[8] = {0};
     uint32_t tree_addr[8] = {0};
-
-    #if PERF_CNT_CYCLES == 1
-        CSR_WRITE(CSR_REG_MCYCLE, 0);
-    #endif
+    
 
     memcpy(ctx.sk_seed, sk, SPX_N);
     memcpy(ctx.pub_seed, pk, SPX_N);

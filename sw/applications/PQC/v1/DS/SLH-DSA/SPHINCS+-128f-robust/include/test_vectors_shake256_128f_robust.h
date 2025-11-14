@@ -42,6 +42,4 @@ static uint8_t TVEC_IN_SM_SIGN [17121] = {
 };
 
 
-
-
 #endif /* __TEST_VECTORS_SHAKE256_128F_ROBUST_H__ */

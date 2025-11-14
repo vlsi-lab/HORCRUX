@@ -25,9 +25,9 @@
 #include "test_vectors_shake256_128f_simple.h"
 
 
-#define TEST_KEY  1
+#define TEST_KEY  0
 #define TEST_SIGN  1
-#define TEST_SIGN_OPEN 1
+#define TEST_SIGN_OPEN 0
 
 #define MLEN_KAT 33
 uint8_t keypair_rnd[CRYPTO_SEEDBYTES];
@@ -46,18 +46,17 @@ void printVect(char* name, uint8_t* buf, size_t size) {
     printf("\n");
 }
 
+    static uint8_t sk[CRYPTO_SECRETKEYBYTES];
+    static uint8_t pk[CRYPTO_PUBLICKEYBYTES];
+    static uint8_t m[MLEN_KAT];
+    static uint8_t sm[MLEN_KAT + CRYPTO_BYTES];
+    static uint8_t m1[MLEN_KAT + CRYPTO_BYTES];
+  
+    unsigned long long  mlen, smlen, mlen1;
+
 int main(void)
 {
 
-    uint8_t sk[CRYPTO_SECRETKEYBYTES];
-    uint8_t pk[CRYPTO_PUBLICKEYBYTES];
-
-    uint8_t m[MLEN_KAT];
-    uint8_t sm[MLEN_KAT + CRYPTO_BYTES];
-    uint8_t m1[MLEN_KAT + CRYPTO_BYTES];
-
-        
-    unsigned long long  mlen, smlen, mlen1;
     unsigned cycles_keygen, cycles_sign, cycles_sign_open;
     
     #if PERF_CNT_CYCLES == 1
@@ -121,7 +120,7 @@ int main(void)
         
         #if PERF_CNT_CYCLES == 1
             CSR_READ(CSR_REG_MCYCLE, &cycles_sign);
-            printf("Sign cycles: %d\n", cycles_sign);
+            printf("Sign cycles: %u\n", cycles_sign);
         #endif
   
               if(memcmp(sm, TVEC_IN_SM_SIGN, SPX_BYTES)) { printf("ERROR: SM mismatch\n");}

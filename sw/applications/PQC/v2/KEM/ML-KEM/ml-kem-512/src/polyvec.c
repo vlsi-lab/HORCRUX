@@ -3,8 +3,6 @@
 #include "poly.h"
 #include "polyvec.h"
 
-#include "../include/mlkem512_instructions.h"
-
 /*************************************************
 * Name:        polyvec_compress
 *
@@ -53,27 +51,17 @@ void polyvec_compress(uint8_t r[KYBER_POLYVECCOMPRESSEDBYTES], const polyvec *a)
   uint16_t t[4];
   for(i=0;i<KYBER_K;i++) {
     for(j=0;j<KYBER_N/4;j++) {
-      #if ENABLE_COMPRESS2
-          asm volatile (
-              ".insn r 0x3b, 0x1, 0x27, %[dst], %[src], x0\r\n"
-              ".insn r 0x3b, 0x1, 0x27, %[dst2], %[src2], x0\r\n"
-              ".insn r 0x3b, 0x1, 0x27, %[dst3], %[src3], x0\r\n"
-              ".insn r 0x3b, 0x1, 0x27, %[dst4], %[src4], x0\r\n"
-              : [dst] "=r" (t[0]), [dst2] "=r" (t[1]), [dst3] "=r" (t[2]), [dst4] "=r" (t[3])   
-              : [src] "r" (a->vec[i].coeffs[4 * j]), [src2] "r" (a->vec[i].coeffs[4 * j + 1]), [src3] "r" (a->vec[i].coeffs[4 * j + 2]), [src4] "r" (a->vec[i].coeffs[4 * j + 3]): );
-      #else
-        for (k = 0; k < 4; k++) {
-            t[k]  = a->vec[i].coeffs[4 * j + k];
-            t[k] += ((int16_t)t[k] >> 15) & KYBER_Q;
-            /*      t[k]  = ((((uint32_t)t[k] << 10) + KYBER_Q/2)/ KYBER_Q) & 0x3ff; */
-            d0 = t[k];
-            d0 <<= 10;
-            d0 += 1665;
-            d0 *= 1290167;
-            d0 >>= 32;
-            t[k] = d0 & 0x3ff;
-        }
-      #endif
+      for(k=0;k<4;k++) {
+        t[k]  = a->vec[i].coeffs[4*j+k];
+        t[k] += ((int16_t)t[k] >> 15) & KYBER_Q;
+/*      t[k]  = ((((uint32_t)t[k] << 10) + KYBER_Q/2)/ KYBER_Q) & 0x3ff; */
+        d0 = t[k];
+        d0 <<= 10;
+        d0 += 1665;
+        d0 *= 1290167;
+        d0 >>= 32;
+        t[k] = d0 & 0x3ff;
+      }
 
       r[0] = (t[0] >> 0);
       r[1] = (t[0] >> 8) | (t[1] << 2);

@@ -11,6 +11,7 @@
 //
 ///////////////////////////////////////////////////////////////////////////////////
 
+
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
@@ -153,7 +154,7 @@ int main(void)
         crypto_sign_open(m1, &mlen1, sm, 49889, pk);
         #if PERF_CNT_CYCLES == 1
             CSR_READ(CSR_REG_MCYCLE, &cycles_sign_open);
-            printf("Verify cycles: %u\n", cycles_sign_open);
+            printf("Verify cycles: %d\n", cycles_sign_open);
         #endif
         if(memcmp(m1, TVEC_IN_M_SIGN, MLEN_KAT)) { printf("ERROR: M mismatch\n");}
 

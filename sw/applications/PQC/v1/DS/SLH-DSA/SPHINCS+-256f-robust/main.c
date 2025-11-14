@@ -26,9 +26,9 @@
 #include "test_vectors_shake256_256f_robust.h"
 
 
-#define TEST_KEY  0
+#define TEST_KEY  1
 #define TEST_SIGN 1
-#define TEST_SIGN_OPEN 0
+#define TEST_SIGN_OPEN 1
 
 #define MLEN_KAT 33
 uint8_t keypair_rnd[CRYPTO_SEEDBYTES];
@@ -122,7 +122,7 @@ int main(void)
         
         #if PERF_CNT_CYCLES == 1
             CSR_READ(CSR_REG_MCYCLE, &cycles_sign);
-            printf("Sign cycles: %u\n", cycles_sign);
+            printf("Sign cycles: %d\n", cycles_sign);
         #endif
   
               if(memcmp(sm, TVEC_IN_SM_SIGN, SPX_BYTES)) { printf("ERROR: SM mismatch\n");}

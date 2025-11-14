@@ -42,6 +42,13 @@ BYPASS_FLL			?= 1 # 0: use FLL, 1: bypass FLL
 FUSESOC_FLAGS		?=
 FUSESOC_ARGS		?=
 
+# QuestaSim
+DPI_LIBS			:= $(BUILD_DIR)/sw/sim/uartdpi.so
+QUESTA_SIM_POSTSYNTH_DIR 			= sim_postsynthesis-modelsim
+
+# Power Analysis
+PWR_VCD ?= ./build/vlsi_polito_mcu_horcrux_0/$(QUESTA_SIM_POSTSYNTH_DIR)/waves-0.vcd
+
 # Application-specific makefile
 APP_MAKE  			:= $(wildcard sw/applications/$(PROJECT)/*akefile)
 APP_MAKE_PARAMS		?=
@@ -59,8 +66,6 @@ EXTERNAL_DOMAINS = 1
 # Keccak application flags
 USE_DMA   ?= 1
 
-# Algorithms to be run. Possibilities: Kyber, Dilithium, HQC, Falcon, SPHINCS (case-sensitive!)
-ALGORITHMS = Kyber
 
 ifndef CONDA_DEFAULT_ENV
 $(info USING VENV)
@@ -83,10 +88,12 @@ x_heep-sync:
 	rsync -a config/x_heep_system.sv hw/vendor/esl_epfl_x_heep/hw/system/x_heep_system.sv
 	rsync -a config/cpu_subsystem.sv hw/vendor/esl_epfl_x_heep/hw/core-v-mini-mcu/cpu_subsystem.sv
 	rsync -a config/core_v_mini_mcu.sv hw/vendor/esl_epfl_x_heep/hw/core-v-mini-mcu/core_v_mini_mcu.sv
+	rsync -a config/cv32e40px_controller.sv hw/vendor/esl_epfl_x_heep/hw/vendor/esl_epfl_cv32e40px/rtl/cv32e40px_controller.sv
+	rsync -a config/cv32e40px_id_stage.sv hw/vendor/esl_epfl_x_heep/hw/vendor/esl_epfl_cv32e40px/rtl/cv32e40px_id_stage.sv
+	rsync -a config/cv32e40px_if_stage.sv hw/vendor/esl_epfl_x_heep/hw/vendor/esl_epfl_cv32e40px/rtl/cv32e40px_if_stage.sv
+	rsync -a config/cv32e40px_x_disp.sv hw/vendor/esl_epfl_x_heep/hw/vendor/esl_epfl_cv32e40px/rtl/cv32e40px_x_disp.sv
+	rsync -a config/cv32e40px_register_file_ff.sv hw/vendor/esl_epfl_x_heep/hw/vendor/esl_epfl_cv32e40px/rtl/cv32e40px_register_file_ff.sv
 
-CRYPTO-VLSI-SW-sync:
-	@echo "### Modifiying CRYPTO-VLSI-SW repository..."
-	rsync -a sw/applications/CRYPTO-VLSI-SW/ ../CRYPTO-VLSI-SW/
 
 HOCRUX-sync:
 	@echo "### Modifiying HOCRUX repository..."
@@ -108,6 +115,14 @@ app-tests-$(TESTS):
 	riscv32-unknown-elf-objdump -d sw/applications/tests/$(TESTS)/main.elf > dis/test-$(TESTS).s
 	riscv32-unknown-elf-objdump -S sw/applications/tests/$(TESTS)/main.elf > dis/test-$(TESTS).disasm
 	@echo "### DONE! App app-optimized-test-$(TESTS) generated successfully!"
+
+
+app-tests-$(VER)-$(TESTS):
+	$(MAKE) -C sw applications/tests-$(VER)/$(TESTS)/main.hex TARGET=$(TARGET) LINKER=$(LINKER)
+	riscv32-unknown-elf-objdump -d sw/applications/tests-$(VER)/$(TESTS)/main.elf > dis/test-$(VER)-$(TESTS)-.s
+	riscv32-unknown-elf-objdump -S sw/applications/tests-$(VER)/$(TESTS)/main.elf > dis/test-$(VER)-$(TESTS).disasm
+	@echo "### DONE! App app-test-$(VER)-$(TESTS) generated successfully!"
+
 
 run-tests-$(TESTS):
 	cd ./build/vlsi_polito_mcu_horcrux_0/sim-modelsim; \
@@ -140,21 +155,12 @@ run-$(V)-$(SCHEME)-$(ALG)-$(VERSION):
 
 # Applications  ###################################################################################################################################
 
-vendor-update-CRYPTO-VLSI-SW:
-	@echo "### Updating vendored applications..."
-	find sw/applications/vendor -maxdepth 1 -type f -name "*.vendor.hjson" -exec python3 util/vendor.py -vU '{}' \;
-
 app-helloworld:
 	$(MAKE) -C sw x_heep_applications/hello_world/hello_world.hex TARGET=$(TARGET)
 
 app-$(ACC)-$(SCHEME)-$(ALG):
 	$(MAKE) -C sw applications/CRYPTO-VLSI-SW/$(ACC)/$(SCHEME)/$(ALG)/main.hex TARGET=$(TARGET) LINKER=$(LINKER)
 	@echo "### DONE! App app-$(ACC)-$(SCHEME)-$(ALG) generated successfully for $(ACC)-version!"
-
-
-
-
-
 
 # riscv32-unknown-elf-objdump -d sw/applications/CRYPTO-VLSI-SW/tests/$(TESTS)/main.elf > dis/test-$(TESTS).s
 # riscv32-unknown-elf-objdump -S sw/applications/CRYPTO-VLSI-SW/tests/$(TESTS)/main.elf > dis/test-$(TESTS).disasm
@@ -197,8 +203,6 @@ run-$(ACC)-$(SCHEME)-$(ALG)-gui:
 	cat uart0.log; \
 	cd ../../..;
 
-
-
 run-$(ACC)-$(SCHEME)-$(ALG)-$(VERSION)-gui:
 	cd ./build/vlsi_polito_mcu_horcrux_0/sim-modelsim; \
 	make run-gui PLUSARGS="c firmware=../../../sw/applications/CRYPTO-VLSI-SW/$(ACC)/$(SCHEME)/$(ALG)/$(VERSION)/main.hex"; \
@@ -206,26 +210,49 @@ run-$(ACC)-$(SCHEME)-$(ALG)-$(VERSION)-gui:
 	cd ../../..;
 
 
+## @subsection QuestaSim postsynthesis simulation
 
-## @section Vivado
+## Build simulation model
+.PHONY: questasim-sim-postsynth
+questasim-sim-postsynth: 
+	$(FUSESOC) --cores-root . run --no-export --target=sim_postsynthesis --tool=modelsim $(FUSESOC_FLAGS) --setup --build vlsi:polito:mcu_horcrux 2>&1 | tee buildsim.log
 
-## Builds (synthesis and implementation) the bitstream for the FPGA version using Vivado
-## @param FPGA_BOARD=nexys-a7-100t,pynq-z2
-## @param FUSESOC_FLAGS=--flag=<flagname>
+run-tests-postsynth-$(TESTS):
+	cd ./build/vlsi_polito_mcu_horcrux_0/$(QUESTA_SIM_POSTSYNTH_DIR); \
+	make run PLUSARGS="c firmware=../../../sw/applications/tests/$(TESTS)/main.hex"; \
+	cat uart0.log; \
+	cd ../../..;
 
-## @section Design Compiler
-asic:
-	$(FUSESOC) --cores-root . run --no-export --target=asic_synthesis $(FUSESOC_FLAGS) --setup vlsi:polito:mcu_horcrux ${FUSESOC_PARAM} 2>&1 | tee builddesigncompiler.log
+run-tests-postsynth-$(VER)-$(TESTS):
+	cd ./build/vlsi_polito_mcu_horcrux_0/$(QUESTA_SIM_POSTSYNTH_DIR); \
+	make run PLUSARGS="c firmware=../../../sw/applications/tests-$(VER)/$(TESTS)/main.hex"; \
+	cat uart0.log; \
+	cd ../../..;
 
-vivado-fpga:
-	$(FUSESOC) --cores-root . run --no-export --target=$(FPGA_BOARD) $(FUSESOC_FLAGS) --setup --build vlsi:polito:mcu_horcrux 2>&1 | tee buildvivado.log
+run-tests-postsynth-$(VER)-$(TESTS)-gui:
+	cd ./build/vlsi_polito_mcu_horcrux_0/$(QUESTA_SIM_POSTSYNTH_DIR); \
+	make run-gui PLUSARGS="c firmware=../../../sw/applications/tests-$(VER)/$(TESTS)/main.hex"; \
+	cat uart0.log; \
+	cd ../../..;
 
-vivado-fpga-nobuild:
-	$(FUSESOC) --cores-root . run --no-export --target=$(FPGA_BOARD) $(FUSESOC_FLAGS) --setup vlsi:polito:mcu_horcrux 2>&1 | tee buildvivado.log
+
+## Perform power analysis
+.PHONY: power-analysis
+power-analysis:
+	@echo "### Running power analysis..."
+	rm -rf implementation/power_analysis/reports/*
+	pushd implementation/power_analysis/; ./run_pwr_flow.sh $(PWR_VCD) horcrux_x_heep_top; popd;
 
 # Debug
 openOCD_epflp:
 	$(MAKE) -f $(XHEEP_MAKE) openOCD_epflp
+
+## @section Design Compiler
+.PHONY: asic
+asic:
+	$(FUSESOC) --cores-root . run --no-export --target asic_synthesis $(FUSESOC_FLAGS) --setup --build vlsi:polito:mcu_horcrux 2>&1 | tee fusesoc_synthesis.log
+	./scripts/check_log_synth.sh
+
 
 # Clean rules
 .PHONY: clean clean-build clean-app clean-lock
@@ -244,4 +271,3 @@ clean-lock:
 export HEEP_DIR = hw/vendor/esl_epfl_x_heep/
 XHEEP_MAKE = $(HEEP_DIR)external.mk
 #include $(XHEEP_MAKE)
-

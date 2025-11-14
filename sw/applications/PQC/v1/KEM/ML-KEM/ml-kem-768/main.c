@@ -11,6 +11,7 @@
 //
 ///////////////////////////////////////////////////////////////////////////////////
 
+
 #include <stddef.h>
 #include <stdio.h>
 #include <string.h>
@@ -131,7 +132,7 @@ int main(void)
             CSR_WRITE(CSR_REG_MCYCLE, 0);
         #endif
         crypto_kem_dec(key_a, ct, sk);
-            #if PERF_CNT_CYCLES == 1
+        #if PERF_CNT_CYCLES == 1
             CSR_READ(CSR_REG_MCYCLE, &cycles_decaps);
             printf("Decaps cycles: %d\n", cycles_decaps);
         #endif

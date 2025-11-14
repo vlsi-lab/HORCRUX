@@ -7,8 +7,6 @@
 #include <stdint.h>
 #include "parameters.h"
 
-#include "hqc5_instructions.h"
-
 static uint16_t gf_reduce(uint16_t x);
 void gf_carryless_mul(uint8_t *c, uint8_t a, uint8_t b);
 
@@ -146,33 +144,6 @@ void gf_carryless_mul(uint8_t *c, uint8_t a, uint8_t b) {
     c[1] = h;
 }
 
-
-void gf_carryless_mul_HW(uint8_t *c, uint8_t a, uint8_t b) {
-    uint16_t h = 0;
-    uint16_t l = 0;
-    uint16_t g;
-    uint16_t gx[3];
-
-
-    asm volatile (".insn r 0x3b, 0x01, 0x9, %[dst], %[rs1], %[rs2]\r\n" : [dst] "=&r" (l) : [rs1] "r" (a), [rs2] "r" (b) : );
-    asm volatile (".insn r 0x3b, 0x01, 0xa, %[dst], %[rs1], %[rs2]\r\n" : [dst] "=&r" (gx[0]) : [rs1] "r" (a), [rs2] "r" (b) : ); 
-    l ^= gx[0] << 2;
-    h ^= gx[0] >> 6;
-    asm volatile (".insn r 0x3b, 0x1, 0xb, %[dst], %[rs1], %[rs2]\r\n" : [dst] "=&r" (gx[1]) : [rs1] "r" (a), [rs2] "r" (b) : ); 
-    l ^= gx[1] << 4;
-    h ^= gx[1] >> 4;
-    asm volatile (".insn r 0x3b, 0x1, 0xc, %[dst], %[rs1], %[rs2]\r\n" : [dst] "=&r" (gx[2]) : [rs1] "r" (a), [rs2] "r" (b) : ); 
-    l ^= gx[2] << 6;
-    h ^= gx[2] >> 2;
-
-    uint16_t mask = (-((b >> 7) & 1));
-    l ^= ((a << 7) & mask);
-    h ^= ((a >> (1)) & mask);
-
-    c[0] = l;
-    c[1] = h;
-}
-
 /**
  * Multiplies two elements of GF(2^GF_M).
  * @returns the product a*b
@@ -181,13 +152,7 @@ void gf_carryless_mul_HW(uint8_t *c, uint8_t a, uint8_t b) {
  */
 uint16_t gf_mul(uint16_t a, uint16_t b) {
     uint8_t c[2] = {0};
-    #if ENABLE_GF_CARRYLESS
-        gf_carryless_mul_HW(c, (uint8_t) a, (uint8_t) b);
-        asm inline("nop");      
-    #else
-        gf_carryless_mul(c, (uint8_t) a, (uint8_t) b);
-    #endif
-
+    gf_carryless_mul(c, (uint8_t)a, (uint8_t)b);
     uint16_t tmp = (uint16_t)(c[0] ^ (c[1] << 8));
     return gf_reduce(tmp);
 }

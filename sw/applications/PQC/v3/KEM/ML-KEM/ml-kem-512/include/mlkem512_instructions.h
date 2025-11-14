@@ -26,10 +26,4 @@
 #define ENABLE_COMPRESS        1
 #define ENABLE_COMPRESS2       1
 
-
-#define PROFILING_KEM          0
-#define PROFILING_INDCPA       0
-#define PROFILING_NTT          0
-
-
 #endif /* MLKEM512_INSTRUCTIONS_H */

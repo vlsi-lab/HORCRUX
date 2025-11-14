@@ -11,6 +11,7 @@
 //
 ///////////////////////////////////////////////////////////////////////////////////
 
+
 #include <stddef.h>
 #include <stdint.h>
 #include <stdio.h>
@@ -60,11 +61,12 @@ int main(void)
     size_t smlen, mlen1;
 
     unsigned cycles_keygen, cycles_sign, cycles_sign_open;
-
+    
     #if PERF_CNT_CYCLES == 1
         CSR_CLEAR_BITS(CSR_REG_MCOUNTINHIBIT, 0x1);
         CSR_WRITE(CSR_REG_MCYCLE, 0);
     #endif
+
 
     printf("Started test.\n");
     memset(pk, 0, CRYPTO_PUBLICKEYBYTES);

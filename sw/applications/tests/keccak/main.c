@@ -16,6 +16,8 @@
 #include <inttypes.h>
 #include <string.h>
 #include <keccak32.h>
+#include "vcd_util.h"
+
 
 #ifdef PERF_CNT_CYCLES
     #include "core_v_mini_mcu.h"
@@ -103,7 +105,7 @@ int main(){
 	D_expected[49] = 0x0271BFE2;
 	D_expected[48] = 0x84B1B424;
 	
-    //printf("Hello Keccak\n");
+    printf("Hello Keccak\n");
 
     unsigned char temp[1600];
         

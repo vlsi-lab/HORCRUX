@@ -12,9 +12,7 @@
 #include "randombytes.h"
 #include "utils.h"
 #include "merkle.h"
-#include "sphincs_instructions.h"
-#include "core_v_mini_mcu.h"
-#include "csr.h"
+
 
 #include <stdio.h>
 #include <stdint.h>
@@ -67,7 +65,6 @@ int crypto_sign_seed_keypair(unsigned char *pk, unsigned char *sk,
                              const unsigned char *seed)
 {
     spx_ctx ctx;
-    unsigned init_hash_cycles, merkle_gen_root_cycles;
 
     /* Initialize SK_SEED, SK_PRF and PUB_SEED from seed. */
     memcpy(sk, seed, CRYPTO_SEEDBYTES);
@@ -79,23 +76,11 @@ int crypto_sign_seed_keypair(unsigned char *pk, unsigned char *sk,
 
     /* This hook allows the hash function instantiation to do whatever
        preparation or computation it needs, based on the public seed. */
-    #if PERF_CNT_CYCLES == 1 && PROFILING_SIGN == 1
-      CSR_WRITE(CSR_REG_MCYCLE, 0);
-    #endif
     initialize_hash_function(&ctx);  
-    #if PERF_CNT_CYCLES == 1 && PROFILING_SIGN == 1
-      CSR_READ(CSR_REG_MCYCLE, &init_hash_cycles);
-      printf("inith_hash cycles: %u\n", init_hash_cycles);
-    #endif
+    
     /* Compute root node of the top-most subtree. */
-    #if PERF_CNT_CYCLES == 1 && PROFILING_SIGN == 1
-      CSR_WRITE(CSR_REG_MCYCLE, 0);
-    #endif
     merkle_gen_root(sk + 3*SPX_N, &ctx);
-    #if PERF_CNT_CYCLES == 1 && PROFILING_SIGN == 1
-      CSR_READ(CSR_REG_MCYCLE, &merkle_gen_root_cycles);
-      printf("merkle_gen_root cycles: %u\n", merkle_gen_root_cycles);
-    #endif
+
     memcpy(pk + SPX_N, sk + 3*SPX_N, SPX_N);
 
     return 0;
@@ -134,35 +119,19 @@ int crypto_sign_signature(uint8_t *sig, size_t *siglen,
     uint32_t wots_addr[8] = {0};
     uint32_t tree_addr[8] = {0};
 
-
-    unsigned init_hash_cycles, set_type_cycles, gen_message_random_cycles, hash_message_cycles;
-    unsigned fors_sign_cycles, set_layer_addr_cycles, final_assign_cycles;
-    unsigned set_tree_addr_cycles, copy_subtree_addr_cycles, set_keypair_addr_cycles;
-    unsigned merkle_sign_cycles;
+    #if PERF_CNT_CYCLES == 1
+        CSR_WRITE(CSR_REG_MCYCLE, 0);
+    #endif
 
     memcpy(ctx.sk_seed, sk, SPX_N);
     memcpy(ctx.pub_seed, pk, SPX_N);
 
     /* This hook allows the hash function instantiation to do whatever
        preparation or computation it needs, based on the public seed. */
-    #if PERF_CNT_CYCLES == 1 && PROFILING_SIGN == 1
-        CSR_WRITE(CSR_REG_MCYCLE, 0);
-    #endif
     initialize_hash_function(&ctx);
-    #if PERF_CNT_CYCLES == 1 && PROFILING_SIGN == 1
-        CSR_READ(CSR_REG_MCYCLE, &init_hash_cycles);
-        printf("init_hash cycles: %u\n", init_hash_cycles); 
-    #endif
 
-    #if PERF_CNT_CYCLES == 1 && PROFILING_SIGN == 1
-        CSR_WRITE(CSR_REG_MCYCLE, 0);
-    #endif
     set_type(wots_addr, SPX_ADDR_TYPE_WOTS);
     set_type(tree_addr, SPX_ADDR_TYPE_HASHTREE);
-    #if PERF_CNT_CYCLES == 1 && PROFILING_SIGN == 1
-        CSR_READ(CSR_REG_MCYCLE, &set_type_cycles);
-        printf("set_type cycles: %u\n", set_type_cycles); 
-    #endif
 
     /* Optionally, signing can be made non-deterministic using optrand.
        This can help counter side-channel attacks that would benefit from
@@ -171,86 +140,27 @@ int crypto_sign_signature(uint8_t *sig, size_t *siglen,
 
 
     /* Compute the digest randomization value. */
-    #if PERF_CNT_CYCLES == 1 && PROFILING_SIGN == 1
-        CSR_WRITE(CSR_REG_MCYCLE, 0);
-    #endif
     gen_message_random(sig, sk_prf, signature_rnd, m, mlen, &ctx);
-    #if PERF_CNT_CYCLES == 1 && PROFILING_SIGN == 1
-        CSR_READ(CSR_REG_MCYCLE, &gen_message_random_cycles);
-        printf("gen_message_random cycles: %u\n", gen_message_random_cycles); 
-    #endif
 
     /* Derive the message digest and leaf index from R, PK and M. */
-    #if PERF_CNT_CYCLES == 1 && PROFILING_SIGN == 1
-        CSR_WRITE(CSR_REG_MCYCLE, 0);
-    #endif
     hash_message(mhash, &tree, &idx_leaf, sig, pk, m, mlen, &ctx);
-    #if PERF_CNT_CYCLES == 1 && PROFILING_SIGN == 1
-        CSR_READ(CSR_REG_MCYCLE, &hash_message_cycles);
-        printf("hash_message cycles: %u\n", hash_message_cycles); 
-    #endif
-
     sig += SPX_N;
 
     set_tree_addr(wots_addr, tree);
     set_keypair_addr(wots_addr, idx_leaf);
 
     /* Sign the message hash using FORS. */
-    #if PERF_CNT_CYCLES == 1 && PROFILING_SIGN == 1
-             CSR_WRITE(CSR_REG_MCYCLE, 0);
-    #endif
     fors_sign(sig, root, mhash, &ctx, wots_addr);
-    #if PERF_CNT_CYCLES == 1 && PROFILING_SIGN == 1
-        CSR_READ(CSR_REG_MCYCLE, &fors_sign_cycles);
-        printf("fors_sign cycles: %u\n", fors_sign_cycles); 
-    #endif
-
     sig += SPX_FORS_BYTES;
 
-
     for (i = 0; i < SPX_D; i++) {
-        #if PERF_CNT_CYCLES == 1 && PROFILING_SIGN == 1
-             CSR_WRITE(CSR_REG_MCYCLE, 0);
-        #endif
         set_layer_addr(tree_addr, i);
-        #if PERF_CNT_CYCLES == 1 && PROFILING_SIGN == 1
-            CSR_READ(CSR_REG_MCYCLE, &set_layer_addr_cycles);
-            printf("set_layer_addr cycles: %u\n", set_layer_addr_cycles); 
-        #endif
-        #if PERF_CNT_CYCLES == 1 && PROFILING_SIGN == 1
-            CSR_WRITE(CSR_REG_MCYCLE, 0);
-        #endif
         set_tree_addr(tree_addr, tree);
-        #if PERF_CNT_CYCLES == 1 && PROFILING_SIGN == 1
-            CSR_READ(CSR_REG_MCYCLE, &set_tree_addr_cycles);
-            printf("set_tree_addr cycles: %u\n", set_tree_addr_cycles); 
-        #endif
-        #if PERF_CNT_CYCLES == 1 && PROFILING_SIGN == 1
-            CSR_WRITE(CSR_REG_MCYCLE, 0);
-        #endif
+
         copy_subtree_addr(wots_addr, tree_addr);
-        #if PERF_CNT_CYCLES == 1 && PROFILING_SIGN == 1
-            CSR_READ(CSR_REG_MCYCLE, &copy_subtree_addr_cycles);
-            printf("copy_subtree_addr cycles: %u\n", copy_subtree_addr_cycles); 
-        #endif
-        #if PERF_CNT_CYCLES == 1 && PROFILING_SIGN == 1
-            CSR_WRITE(CSR_REG_MCYCLE, 0);
-        #endif
         set_keypair_addr(wots_addr, idx_leaf);
-        #if PERF_CNT_CYCLES == 1 && PROFILING_SIGN == 1
-            CSR_READ(CSR_REG_MCYCLE, &set_keypair_addr_cycles);
-            printf("set_keypair_addr cycles: %u\n", set_keypair_addr_cycles); 
-        #endif
 
-        #if PERF_CNT_CYCLES == 1 && PROFILING_SIGN == 1
-            CSR_WRITE(CSR_REG_MCYCLE, 0);
-        #endif
         merkle_sign(sig, root, &ctx, wots_addr, tree_addr, idx_leaf);
-        #if PERF_CNT_CYCLES == 1 && PROFILING_SIGN == 1
-            CSR_READ(CSR_REG_MCYCLE, &merkle_sign_cycles);
-            printf("merkle_sign cycles: %u\n", merkle_sign_cycles); 
-        #endif
-
         sig += SPX_WOTS_BYTES + SPX_TREE_HEIGHT * SPX_N;
 
         /* Update the indices for the next layer. */
@@ -282,16 +192,6 @@ int crypto_sign_verify(const uint8_t *sig, size_t siglen,
     uint32_t tree_addr[8] = {0};
     uint32_t wots_pk_addr[8] = {0};
 
-    unsigned init_hash_cycles, set_type_cycles;
-    unsigned hash_message_cycles, set_tree_addr_cycles, set_keypair_addr_cycles;
-    unsigned fors_pk_from_sig_cycles;
-    unsigned set_layer_addr_cycles;
-    unsigned merkle_pk_cycles;
-    unsigned copy_subtree_addr_cycles;
-    unsigned thash_cycles;
-    unsigned compute_root_cycles;
-    unsigned wots_pk_from_sig_cycles, copy_keypair_addr_cycles;
-
     if (siglen != SPX_BYTES) {
         return -1;
     }
@@ -300,14 +200,7 @@ int crypto_sign_verify(const uint8_t *sig, size_t siglen,
 
     /* This hook allows the hash function instantiation to do whatever
        preparation or computation it needs, based on the public seed. */
-    #if PERF_CNT_CYCLES == 1 && PROFILING_SIGN == 1
-        CSR_WRITE(CSR_REG_MCYCLE, 0);
-    #endif
     initialize_hash_function(&ctx);
-    #if PERF_CNT_CYCLES == 1 && PROFILING_SIGN == 1
-        CSR_READ(CSR_REG_MCYCLE, &init_hash_cycles);
-        printf("init_hash cycles: %u\n", init_hash_cycles); 
-    #endif
 
     set_type(wots_addr, SPX_ADDR_TYPE_WOTS);
     set_type(tree_addr, SPX_ADDR_TYPE_HASHTREE);
@@ -315,121 +208,38 @@ int crypto_sign_verify(const uint8_t *sig, size_t siglen,
 
     /* Derive the message digest and leaf index from R || PK || M. */
     /* The additional SPX_N is a result of the hash domain separator. */
-    #if PERF_CNT_CYCLES == 1 && PROFILING_SIGN == 1
-        CSR_WRITE(CSR_REG_MCYCLE, 0);
-    #endif
     hash_message(mhash, &tree, &idx_leaf, sig, pk, m, mlen, &ctx);
-    #if PERF_CNT_CYCLES == 1 && PROFILING_SIGN == 1
-        CSR_READ(CSR_REG_MCYCLE, &hash_message_cycles);
-        printf("hash_message cycles: %u\n", hash_message_cycles); 
-    #endif
     sig += SPX_N;
 
     /* Layer correctly defaults to 0, so no need to set_layer_addr */
-    #if PERF_CNT_CYCLES == 1 && PROFILING_SIGN == 1
-        CSR_WRITE(CSR_REG_MCYCLE, 0);
-    #endif
     set_tree_addr(wots_addr, tree);
-    #if PERF_CNT_CYCLES == 1 && PROFILING_SIGN == 1
-        CSR_READ(CSR_REG_MCYCLE, &set_tree_addr_cycles);
-        printf("set_tree_addr cycles: %u\n", set_tree_addr_cycles); 
-    #endif
-    #if PERF_CNT_CYCLES == 1 && PROFILING_SIGN == 1
-        CSR_WRITE(CSR_REG_MCYCLE, 0);
-    #endif
     set_keypair_addr(wots_addr, idx_leaf);
-    #if PERF_CNT_CYCLES == 1 && PROFILING_SIGN == 1
-        CSR_READ(CSR_REG_MCYCLE, &set_keypair_addr_cycles);
-        printf("set_keypair_addr cycles: %u\n", set_keypair_addr_cycles); 
-    #endif
 
-    #if PERF_CNT_CYCLES == 1 && PROFILING_SIGN == 1
-        CSR_WRITE(CSR_REG_MCYCLE, 0);
-    #endif
     fors_pk_from_sig(root, sig, mhash, &ctx, wots_addr);
-    #if PERF_CNT_CYCLES == 1 && PROFILING_SIGN == 1
-        CSR_READ(CSR_REG_MCYCLE, &fors_pk_from_sig_cycles);
-        printf("fors_pk_from_sig cycles: %u\n", fors_pk_from_sig_cycles); 
-    #endif
     sig += SPX_FORS_BYTES;
 
     /* For each subtree.. */
     for (i = 0; i < SPX_D; i++) {
-        #if PERF_CNT_CYCLES == 1 && PROFILING_SIGN == 1
-            CSR_WRITE(CSR_REG_MCYCLE, 0);
-        #endif
         set_layer_addr(tree_addr, i);
-        #if PERF_CNT_CYCLES == 1 && PROFILING_SIGN == 1
-            CSR_READ(CSR_REG_MCYCLE, &set_layer_addr_cycles);
-            printf("set_layer_addr cycles: %u\n", set_layer_addr_cycles); 
-        #endif
-        #if PERF_CNT_CYCLES == 1 && PROFILING_SIGN == 1
-            CSR_WRITE(CSR_REG_MCYCLE, 0);
-        #endif
         set_tree_addr(tree_addr, tree);
-        #if PERF_CNT_CYCLES == 1 && PROFILING_SIGN == 1
-            CSR_READ(CSR_REG_MCYCLE, &set_tree_addr_cycles);
-            printf("set_tree_addr cycles: %u\n", set_tree_addr_cycles); 
-        #endif
 
-        #if PERF_CNT_CYCLES == 1 && PROFILING_SIGN == 1
-            CSR_WRITE(CSR_REG_MCYCLE, 0);
-        #endif
         copy_subtree_addr(wots_addr, tree_addr);
-        #if PERF_CNT_CYCLES == 1 && PROFILING_SIGN == 1
-            CSR_READ(CSR_REG_MCYCLE, &copy_subtree_addr_cycles);
-            printf("copy_subtree_addr cycles: %u\n", copy_subtree_addr_cycles); 
-        #endif
-        #if PERF_CNT_CYCLES == 1 && PROFILING_SIGN == 1
-            CSR_WRITE(CSR_REG_MCYCLE, 0);
-        #endif
         set_keypair_addr(wots_addr, idx_leaf);
-        #if PERF_CNT_CYCLES == 1 && PROFILING_SIGN == 1
-            CSR_READ(CSR_REG_MCYCLE, &set_keypair_addr_cycles);
-            printf("set_keypair_addr cycles: %u\n", set_keypair_addr_cycles); 
-        #endif
-        #if PERF_CNT_CYCLES == 1 && PROFILING_SIGN == 1
-            CSR_WRITE(CSR_REG_MCYCLE, 0);
-        #endif
+
         copy_keypair_addr(wots_pk_addr, wots_addr);
-        #if PERF_CNT_CYCLES == 1 && PROFILING_SIGN == 1
-            CSR_READ(CSR_REG_MCYCLE, &copy_keypair_addr_cycles);
-            printf("copy_keypair_addr cycles: %u\n", copy_keypair_addr_cycles); 
-        #endif
 
         /* The WOTS public key is only correct if the signature was correct. */
         /* Initially, root is the FORS pk, but on subsequent iterations it is
            the root of the subtree below the currently processed subtree. */
-        #if PERF_CNT_CYCLES == 1 && PROFILING_SIGN == 1
-            CSR_WRITE(CSR_REG_MCYCLE, 0);
-        #endif   
         wots_pk_from_sig(wots_pk, sig, root, &ctx, wots_addr);
-        #if PERF_CNT_CYCLES == 1 && PROFILING_SIGN == 1
-            CSR_READ(CSR_REG_MCYCLE, &wots_pk_from_sig_cycles);
-            printf("wots_pk_from_sig cycles: %u\n", wots_pk_from_sig_cycles); 
-        #endif
         sig += SPX_WOTS_BYTES;
 
         /* Compute the leaf node using the WOTS public key. */
-        #if PERF_CNT_CYCLES == 1 && PROFILING_SIGN == 1
-            CSR_WRITE(CSR_REG_MCYCLE, 0);
-        #endif
         thash(leaf, wots_pk, SPX_WOTS_LEN, &ctx, wots_pk_addr);
-        #if PERF_CNT_CYCLES == 1 && PROFILING_SIGN == 1
-            CSR_READ(CSR_REG_MCYCLE, &thash_cycles);
-            printf("thash cycles: %u\n", thash_cycles); 
-        #endif
 
         /* Compute the root node of this subtree. */
-        #if PERF_CNT_CYCLES == 1 && PROFILING_SIGN == 1
-            CSR_WRITE(CSR_REG_MCYCLE, 0);
-        #endif
         compute_root(root, leaf, idx_leaf, 0, sig, SPX_TREE_HEIGHT,
                      &ctx, tree_addr);
-        #if PERF_CNT_CYCLES == 1 && PROFILING_SIGN == 1
-            CSR_READ(CSR_REG_MCYCLE, &compute_root_cycles);
-            printf("compute_root_cycles cycles: %u\n", compute_root_cycles); 
-        #endif
         sig += SPX_TREE_HEIGHT * SPX_N;
 
         /* Update the indices for the next layer. */

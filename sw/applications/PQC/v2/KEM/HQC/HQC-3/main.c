@@ -19,8 +19,6 @@
 #include "symmetric.h"
 #include "test_vectors_3.h"
 
-#include "hqc3_instructions.h"
-
 #ifdef PERF_CNT_CYCLES
     #include "core_v_mini_mcu.h"
     #include "csr.h"

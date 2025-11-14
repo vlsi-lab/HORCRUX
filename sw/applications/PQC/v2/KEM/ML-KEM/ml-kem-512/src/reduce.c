@@ -1,7 +1,6 @@
 #include <stdint.h>
 #include "params.h"
 #include "reduce.h"
-#include "../include/mlkem512_instructions.h"
 
 /*************************************************
 * Name:        montgomery_reduce

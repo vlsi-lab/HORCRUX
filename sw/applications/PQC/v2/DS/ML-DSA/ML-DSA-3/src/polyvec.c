@@ -185,7 +185,6 @@ void polyveck_caddq(polyveck *v) {
 
   for(i = 0; i < K; ++i)
     poly_caddq(&v->vec[i]);
-
 }
 
 /*************************************************

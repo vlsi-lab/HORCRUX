@@ -121,7 +121,7 @@ int main(void)
         
         #if PERF_CNT_CYCLES == 1
             CSR_READ(CSR_REG_MCYCLE, &cycles_sign);
-            printf("Sign cycles: %u\n", cycles_sign);
+            printf("Sign cycles: %d\n", cycles_sign);
         #endif
   
               if(memcmp(sm, TVEC_IN_SM_SIGN, SPX_BYTES)) { printf("ERROR: SM mismatch\n");}
@@ -153,7 +153,7 @@ int main(void)
         crypto_sign_open(m1, &mlen1, sm, 17121, pk);
         #if PERF_CNT_CYCLES == 1
             CSR_READ(CSR_REG_MCYCLE, &cycles_sign_open);
-            printf("Verify cycles: %u\n", cycles_sign_open);
+            printf("Verify cycles: %d\n", cycles_sign_open);
         #endif
         if(memcmp(m1, TVEC_IN_M_SIGN, MLEN_KAT)) { printf("ERROR: M mismatch\n");}
 

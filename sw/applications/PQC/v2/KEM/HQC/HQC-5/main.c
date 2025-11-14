@@ -11,6 +11,7 @@
 //
 ///////////////////////////////////////////////////////////////////////////////////
 
+
 #include <ctype.h>
 #include <stdio.h>
 #include <stdlib.h>
@@ -18,8 +19,6 @@
 #include "api.h"
 #include "symmetric.h"
 #include "test_vectors_5.h"
-
-#include "hqc5_instructions.h"
 
 #ifdef PERF_CNT_CYCLES
     #include "core_v_mini_mcu.h"
@@ -38,14 +37,19 @@ void printVect(char* name, uint8_t* buf, size_t size) {
     printf("\n");
 }
 
+    static uint8_t pk[CRYPTO_PUBLICKEYBYTES];
+    static uint8_t sk[CRYPTO_SECRETKEYBYTES];
+    static uint8_t ct[CRYPTO_CIPHERTEXTBYTES] = {0};
+    static uint8_t ss[CRYPTO_BYTES] = {0};
+    static uint8_t ss1[CRYPTO_BYTES] = {0};    
 
 int main(void)
 {
-    uint8_t pk[CRYPTO_PUBLICKEYBYTES];
-    uint8_t sk[CRYPTO_SECRETKEYBYTES];
-    uint8_t ct[CRYPTO_CIPHERTEXTBYTES] = {0};
-    uint8_t ss[CRYPTO_BYTES] = {0};
-    uint8_t ss1[CRYPTO_BYTES] = {0};    
+    //uint8_t pk[CRYPTO_PUBLICKEYBYTES];
+    //uint8_t sk[CRYPTO_SECRETKEYBYTES];
+    //uint8_t ct[CRYPTO_CIPHERTEXTBYTES] = {0};
+    //uint8_t ss[CRYPTO_BYTES] = {0};
+    //uint8_t ss1[CRYPTO_BYTES] = {0};    
 
     unsigned cycles_keygen, cycles_encaps, cycles_decaps;
 
@@ -77,7 +81,7 @@ int main(void)
     //************************************************* 
     // KEY
     //*************************************************
-    #ifdef TEST_KEY
+    #if TEST_KEY == 1
 
         #if PERF_CNT_CYCLES == 1
             CSR_WRITE(CSR_REG_MCYCLE, 0);
@@ -90,18 +94,18 @@ int main(void)
 
         if(memcmp(pk, TVEC_OUT_PK, CRYPTO_PUBLICKEYBYTES)) { printf("\nERROR: PK mismatch\n");}
         if(memcmp(sk, TVEC_OUT_SK, CRYPTO_SECRETKEYBYTES)) { printf("\nERROR: SK mismatch\n");}
-        //printVect("pk", pk, CRYPTO_PUBLICKEYBYTES);
-        //printVect("sk", sk, CRYPTO_SECRETKEYBYTES);
-        //printf("\n");
+        printVect("pk", pk, CRYPTO_PUBLICKEYBYTES);
+        printVect("sk", sk, CRYPTO_SECRETKEYBYTES);
+        printf("\n");
     
     #endif /* TEST_KEY */   
 
     //************************************************* 
     // ENCAPSULATION
     //*************************************************     
-    #ifdef TEST_ENC
+    #if TEST_ENC == 1
          
-        #ifndef TEST_KEY
+        #if TEST_KEY == 0
             memcpy(pk, TVEC_OUT_PK, CRYPTO_PUBLICKEYBYTES);
         #endif  
 
@@ -116,8 +120,10 @@ int main(void)
 
         if(memcmp(ct, TVEC_OUT_CT, CRYPTO_CIPHERTEXTBYTES)) { printf("ERROR: CT mismatch\n");}
         if(memcmp(ss, TVEC_OUT_SS, CRYPTO_BYTES)) { printf("ERROR: SS mismatch\n");}
-        //printVect("ct", ct, CRYPTO_CIPHERTEXTBYTES);
-        //printVect("key_a", ss, CRYPTO_BYTES);   
+        printVect("T_VEC_ct", TVEC_OUT_CT, CRYPTO_CIPHERTEXTBYTES);
+        printVect("T_VEC_key_a", TVEC_OUT_SS, CRYPTO_BYTES);   
+        printVect("ct", ct, CRYPTO_CIPHERTEXTBYTES);
+        printVect("key_a", ss, CRYPTO_BYTES);   
 
     #endif /* TEST_ENC */
 
@@ -125,11 +131,11 @@ int main(void)
     // DECAPSULATION
     //*************************************************
 
-    #ifdef TEST_DEC
-        #ifndef TEST_KEY
+    #if TEST_DEC == 1   
+        #if TEST_KEY == 0
             memcpy(sk, TVEC_OUT_SK[0], CRYPTO_SECRETKEYBYTES);
         #endif 
-        #ifndef TEST_ENC
+        #if TEST_ENC == 0
             memcpy(ct, TVEC_OUT_CT[0], CRYPTO_CIPHERTEXTBYTES);
         #endif 
 
@@ -143,7 +149,7 @@ int main(void)
         #endif
         
         if(memcmp(ss1, TVEC_OUT_SS, CRYPTO_BYTES)) { printf("ERROR: SS mismatch\n");}
-        //printVect("key_b", ss1, CRYPTO_BYTES);
+        printVect("key_b", ss1, CRYPTO_BYTES);
     #endif /* TEST_DEC */
 
     #ifdef PRINT_VECT

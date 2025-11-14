@@ -3,9 +3,6 @@
 #include "ntt.h"
 #include "reduce.h"
 
-#include "../include/dilithium5_instructions.h"
-
-
 static const int32_t zetas[N] = {
          0,    25847, -2608894,  -518909,   237124,  -777960,  -876248,   466468,
    1826347,  2353451,  -359251, -2091905,  3119733, -2884855,  3111497,  2680103,
@@ -49,60 +46,22 @@ static const int32_t zetas[N] = {
 *
 * Arguments:   - uint32_t p[N]: input/output coefficient array
 **************************************************/
-#if ENABLE_DILITHIUM_NTT
-  void ntt(int32_t a[N]) {
-    unsigned int len, start, j, k;
-    int32_t zeta, t;
-    uint64_t prod;      // raw product
-    uint32_t temp2;
+void ntt(int32_t a[N]) {
+  unsigned int len, start, j, k;
+  int32_t zeta, t;
 
-    k = 0;
-    for(len = 128; len > 0; len >>= 1) {
-      for(start = 0; start < N; start = j + len) {
-        zeta = zetas[++k];
-        for(j = start; j < start + len; ++j) {
-
-          int32_t aj   = a[j];
-          int32_t alen = a[j + len];
-          int32_t t, rlo, rhi;
-
-          asm volatile(
-              "mul    %[rlo], %[z], %[al]\n\t"
-              "mulh   %[rhi], %[z], %[al]\n\t"
-              "mv     a3,     %[rlo]\n\t"
-              ".insn r 0x3b, 0x1, 0x6, %[t], a3, %[rhi]\n\t"
-              "sub    %[al],  %[aj], %[t]\n\t"   // alen = aj - t
-              "add    %[aj],  %[aj], %[t]\n\t"   // aj   = aj + t
-              : [aj] "+r"(aj), [al] "+r"(alen),
-                [t]  "=&r"(t), [rlo] "=&r"(rlo), [rhi] "=&r"(rhi)
-              : [z] "r"(zeta)
-              : "cc", "a2", "a3"
-          );
-          a[j]       = aj;
-          a[j + len] = alen;
-
-        }
+  k = 0;
+  for(len = 128; len > 0; len >>= 1) {
+    for(start = 0; start < N; start = j + len) {
+      zeta = zetas[++k];
+      for(j = start; j < start + len; ++j) {
+        t = montgomery_reduce((int64_t)zeta * a[j + len]);
+        a[j + len] = a[j] - t;
+        a[j] = a[j] + t;
       }
     }
   }
-#else
-  void ntt(int32_t a[N]) {
-    unsigned int len, start, j, k;
-    int32_t zeta, t;
-
-    k = 0;
-    for(len = 128; len > 0; len >>= 1) {
-      for(start = 0; start < N; start = j + len) {
-        zeta = zetas[++k];
-        for(j = start; j < start + len; ++j) {
-          t = montgomery_reduce((int64_t)zeta * a[j + len]);
-          a[j + len] = a[j] - t;
-          a[j] = a[j] + t;
-        }
-      }
-    }
-  }
-#endif
+}
 
 /*************************************************
 * Name:        invntt_tomont
@@ -115,80 +74,25 @@ static const int32_t zetas[N] = {
 *
 * Arguments:   - uint32_t p[N]: input/output coefficient array
 **************************************************/
-#if ENABLE_DILITHIUM_INVNTT
-  void invntt_tomont(int32_t a[N]) {
-    unsigned int start, len, j, k;
-    int32_t t, zeta;
-    const int32_t f = 41978; // mont^2/256
-    int64_t prod;
-    uint32_t temp2;
+void invntt_tomont(int32_t a[N]) {
+  unsigned int start, len, j, k;
+  int32_t t, zeta;
+  const int32_t f = 41978; // mont^2/256
 
-    k = 256;
-    for(len = 1; len < N; len <<= 1) {
-      for(start = 0; start < N; start = j + len) {
-        zeta = -zetas[--k];
-        for(j = start; j < start + len; ++j) {
-
-          int32_t aj   = a[j];
-          int32_t alen = a[j + len];
-          int32_t t, rlo, rhi;
-
-          asm volatile(
-              "mv     %[t],   %[aj]\n\t"
-              "add    %[aj],  %[aj],  %[al]\n\t"
-              "sub    %[al],  %[t],   %[al]\n\t"
-              "mul    %[rlo], %[z],   %[al]\n\t"
-              "mulh   %[rhi], %[z],   %[al]\n\t"
-              "mv     a3,     %[rlo]\n\t"
-              ".insn r 0x3b, 0x1, 0x6, %[al], a3, %[rhi]\n\t"
-              : [aj] "+r"(aj), [al] "+r"(alen), [t]  "=&r"(t), [rlo] "=&r"(rlo), [rhi] "=&r"(rhi)
-              : [z] "r"(zeta)
-              : "cc", "a3"
-          );
-          a[j]       = aj;
-          a[j + len] = alen;
-
-        }
+  k = 256;
+  for(len = 1; len < N; len <<= 1) {
+    for(start = 0; start < N; start = j + len) {
+      zeta = -zetas[--k];
+      for(j = start; j < start + len; ++j) {
+        t = a[j];
+        a[j] = t + a[j + len];
+        a[j + len] = t - a[j + len];
+        a[j + len] = montgomery_reduce((int64_t)zeta * a[j + len]);
       }
     }
-
-    for(j = 0; j < N; ++j) {
-      int32_t aj  = a[j];
-      int32_t rlo, rhi;
-
-      asm volatile(
-          "mul    %[rlo], %[f],  %[aj]\n\t"          // low word of f*aj
-          "mulh   %[rhi], %[f],  %[aj]\n\t"          // signed high word
-          "mv     a3,     %[rlo]\n\t"                // reducer expects low in a3
-          ".insn r 0x3b, 0x1, 0x6, %[aj], a3, %[rhi]\n\t"  // aj <- REDUCE(a3, rhi)
-          : [aj] "+r"(aj), [rlo] "=&r"(rlo), [rhi] "=&r"(rhi)
-          : [f] "r"((int32_t)f)
-          : "cc", "a2", "a3"
-      );
-      a[j] = aj;
-    }
   }
-#else 
-  void invntt_tomont(int32_t a[N]) {
-    unsigned int start, len, j, k;
-    int32_t t, zeta;
-    const int32_t f = 41978; // mont^2/256
 
-    k = 256;
-    for(len = 1; len < N; len <<= 1) {
-      for(start = 0; start < N; start = j + len) {
-        zeta = -zetas[--k];
-        for(j = start; j < start + len; ++j) {
-          t = a[j];
-          a[j] = t + a[j + len];
-          a[j + len] = t - a[j + len];
-          a[j + len] = montgomery_reduce((int64_t)zeta * a[j + len]);
-        }
-      }
-    }
-
-    for(j = 0; j < N; ++j) {
-      a[j] = montgomery_reduce((int64_t)f * a[j]);
-    }
+  for(j = 0; j < N; ++j) {
+    a[j] = montgomery_reduce((int64_t)f * a[j]);
   }
-#endif
+}

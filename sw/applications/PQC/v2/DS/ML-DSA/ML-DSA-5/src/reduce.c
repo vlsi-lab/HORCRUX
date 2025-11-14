@@ -2,8 +2,6 @@
 #include "params.h"
 #include "reduce.h"
 
-#include "../include/dilithium5_instructions.h"
-
 /*************************************************
 * Name:        montgomery_reduce
 *
@@ -14,44 +12,24 @@
 *
 * Returns r.
 **************************************************/
-#if ENABLE_DILITHIUM_MONTG
-  int32_t montgomery_reduce(int64_t a) {
+int32_t montgomery_reduce(int64_t a) {
 
-    uint32_t temp2;
-    int32_t result;
+    uint32_t lo = (uint32_t)a;
+    uint32_t t  = (lo << 25)
+                + (lo << 24)
+                + (lo << 23)
+                + (lo << 13)
+                +  lo;            // all adds/wrap mod 2^32
 
-    temp2 = a >> 32;
-    asm volatile (
-        "mv a3, %[rs1]\n\t"
-        "mv a2, %[rs2]\n\t"
-        ".insn r 0x3b, 0x1, 0x6, %[rd], a3, a2\n\t"
-        : [rd] "=r" (result)
-        : [rs1] "r" ((int64_t) a), [rs2] "r" (temp2)
-        : "a2", "a3", "cc" );
+    // 2) m = t * Q  via shifts: Q = (1<<23) - (1<<13) + 1
+    int64_t m = ((int64_t)t << 23)
+              - ((int64_t)t << 13)
+              +  (int64_t)t;
+
+    int32_t result = (int32_t)((a - m) >> 32);
 
     return result;
-  }
-
-#else
-  int32_t montgomery_reduce(int64_t a) {
-
-      uint32_t lo = (uint32_t)a;
-      uint32_t t  = (lo << 25)
-                  + (lo << 24)
-                  + (lo << 23)
-                  + (lo << 13)
-                  +  lo;            // all adds/wrap mod 2^32
-
-      // 2) m = t * Q  via shifts: Q = (1<<23) - (1<<13) + 1
-      int64_t m = ((int64_t)t << 23)
-                - ((int64_t)t << 13)
-                +  (int64_t)t;
-
-      int32_t result = (int32_t)((a - m) >> 32);
-
-      return result;
-  }
-#endif
+}
 
 /*************************************************
 * Name:        reduce32
@@ -63,46 +41,31 @@
 *
 * Returns r.
 **************************************************/
-#if ENABLE_DILITHIUM_REDUCE32
-  int32_t reduce32(int32_t a) {
+int32_t reduce32(int32_t a) {
     int32_t z;
-    asm volatile (
-        "mv a3, %[rs1]\n\t"
-        ".insn r 0x3b, 0x01, 0x11, %[rd], a3, x0\n\t"
-        : [rd] "=r" (z)
-        : [rs1] "r" (a)
-        : "a4", "a5", "a3", "cc" );
-  
+    int32_t hi =  a >> 23;
+    int32_t lo = (a >> 22) & 1;
+    int32_t t  = hi + lo;
+    //printf("t=0x%04X (%d)\n", t,t);
+
+    // 2) u = t * Q    with Q = 8 380 417 = 2^23 - 2^13 + 1
+    int32_t u  = (t << 23)
+              - (t << 13)
+              +  t;
+    //printf("u=0x%04X (%d)\n", u,u);
+    z = a - u;
+    //printf("m=0x%04X (%d)\n", z,z);
+
+
+    /* 4. z in [0, Q), reduce once more */
+    if (z >= Q) {
+        z -= Q;
+    } 
+    //printf("z=0x%04X (%d)\n", z,z);
+
+
     return z;
-  }
-#else
-  int32_t reduce32(int32_t a) {
-      int32_t z;
-      //printf("a=0x%04X (%d)\n", a,a);
-      int32_t hi =  a >> 23;
-      int32_t lo = (a >> 22) & 1;
-      int32_t t  = hi + lo;
-      //printf("t=0x%04X (%d)\n", t,t);
-
-      // 2) u = t * Q    with Q = 8 380 417 = 2^23 - 2^13 + 1
-      int32_t u  = (t << 23)
-                - (t << 13)
-                +  t;
-      //printf("u=0x%04X (%d)\n", u,u);
-      z = a - u;
-      //printf("m=0x%04X (%d)\n", z,z);
-
-
-      /* 4. z in [0, Q), reduce once more */
-      if (z >= Q) {
-          z -= Q;
-      } 
-      //printf("z=0x%04X (%d)\n", z,z);
-
-
-      return z;
-  }
-#endif
+}
 
 /*************************************************
 * Name:        caddq
@@ -113,7 +76,6 @@
 *
 * Returns r.
 **************************************************/
-
 int32_t caddq(int32_t a) {
   a += (a >> 31) & Q;
   return a;

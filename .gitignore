@@ -42,3 +42,13 @@ private/
 *.lib
 *.lef
 *.gds
+
+# Synthesis outputs
+scripts/synthesis/synthesis/last_output/
+scripts/synthesis/synthesis/lc_shell/lc_output.txt
+scripts/synthesis/synthesis/output_*
+*.sdf
+implementation/drc/*
+implementation/dummyfill/*
+implementation/lvs/*
+implementation/pnr/*

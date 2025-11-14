@@ -32,7 +32,7 @@ module id_stage
     output logic [1:0] select_op_o
 );
 
-  horcrux_pkg::instruction_u instruction;
+  logic [31:0] instruction;
   horcrux_pkg::in_t rs_values;
   horcrux_pkg::horcrux_insn select_insn;
 
@@ -89,7 +89,7 @@ module id_stage
           rs_values.rs2_0 = xif_issue_if.issue_req.rs[1];
           rs_values.rs3_0 = xif_issue_if.issue_req.rs[2];
           
-          rd_o <= instruction.as_horcrux_R.rd;
+          rd_o <= instruction[11:7];
           id_o <= xif_issue_if.issue_req.id;
       end
     end

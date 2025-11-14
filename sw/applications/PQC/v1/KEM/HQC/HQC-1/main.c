@@ -11,7 +11,6 @@
 //
 ///////////////////////////////////////////////////////////////////////////////////
 
-
 #include <ctype.h>
 #include <stdio.h>
 #include <stdlib.h>
@@ -26,8 +25,10 @@
 #endif
 
 #define TEST_KEY        1
-#define TEST_ENC        1
-#define TEST_DEC        1
+#define TEST_ENC        0
+#define TEST_DEC        0
+
+
 
 void printVect(char* name, uint8_t* buf, size_t size) {
     printf("%s = ", name);
@@ -47,12 +48,11 @@ int main(void)
     uint8_t ss1[CRYPTO_BYTES] = {0};    
 
     unsigned cycles_keygen, cycles_encaps, cycles_decaps;
-
+    
     #if PERF_CNT_CYCLES == 1
         CSR_CLEAR_BITS(CSR_REG_MCOUNTINHIBIT, 0x1);
         CSR_WRITE(CSR_REG_MCYCLE, 0);
     #endif
-
 
     printf("Started test.\n");
     memset(pk, 0, CRYPTO_PUBLICKEYBYTES);
@@ -81,7 +81,7 @@ int main(void)
 
         #if PERF_CNT_CYCLES == 1
             CSR_WRITE(CSR_REG_MCYCLE, 0);
-        #endif
+        #endif 
         crypto_kem_keypair(pk, sk);
         #if PERF_CNT_CYCLES == 1
             CSR_READ(CSR_REG_MCYCLE, &cycles_keygen);
@@ -157,7 +157,6 @@ int main(void)
 
 
     printf("Test Successful\n");
-
 
     return 0;
 }

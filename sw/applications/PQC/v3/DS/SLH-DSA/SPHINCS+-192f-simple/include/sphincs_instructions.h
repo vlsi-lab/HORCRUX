@@ -16,7 +16,7 @@
 
 /* Set to 1 to enable the hardware-accelerated/custom version,
    or 0 to fall back to the reference (“clean”) implementation. */
-#define ENABLE_KECCAK                  1
-#define PROFILING_SIGN                 1
+#define ENABLE_KECCAK                  0
+
 
 #endif /* SPHINCS_INSTRUCTIONS_H */

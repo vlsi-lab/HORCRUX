@@ -1,15 +1,10 @@
-///////////////////////////////////////////////////////////////////////////////////
-//
-// Copyright 2025 PoliTO - @VLSI Lab
-// Solderpad Hardware License, Version 2.1, see LICENSE.md for details.
-// SPDX-License-Identifier: Apache-2.0 WITH SHL-2.1
-//
-// Auth: Alessandra Dolmeta, Valeria Piscopo
-// Email: alessandra.dolmeta@polito.it, valeria.piscopo@polito.it
-// Affiliation: Politecnico di Torino - @VLSI Lab
-// Date: October 2025
-//
-///////////////////////////////////////////////////////////////////////////////////
+///////////////////////////////////////////////////////////////////////////////////////
+//                                                                                   //
+// Auth: Alessandra Dolmeta, Valeria Piscopo - Politecnico di Torino                 //
+// Date: September 2025                                                              //
+// Desc: KAT-TEST                                                                    //
+//                                                                                   //
+///////////////////////////////////////////////////////////////////////////////////////
 
 #ifndef __TEST_VECTORS_2_H__
 #define __TEST_VECTORS_2_H__

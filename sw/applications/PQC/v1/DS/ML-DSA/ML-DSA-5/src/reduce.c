@@ -13,22 +13,11 @@
 * Returns r.
 **************************************************/
 int32_t montgomery_reduce(int64_t a) {
+  int32_t t;
 
-    uint32_t lo = (uint32_t)a;
-    uint32_t t  = (lo << 25)
-                + (lo << 24)
-                + (lo << 23)
-                + (lo << 13)
-                +  lo;            // all adds/wrap mod 2^32
-
-    // 2) m = t * Q  via shifts: Q = (1<<23) - (1<<13) + 1
-    int64_t m = ((int64_t)t << 23)
-              - ((int64_t)t << 13)
-              +  (int64_t)t;
-
-    int32_t result = (int32_t)((a - m) >> 32);
-
-    return result;
+  t = (int64_t)(int32_t)a*QINV;
+  t = (a - (int64_t)t*Q) >> 32;
+  return t;
 }
 
 /*************************************************
@@ -42,29 +31,11 @@ int32_t montgomery_reduce(int64_t a) {
 * Returns r.
 **************************************************/
 int32_t reduce32(int32_t a) {
-    int32_t z;
-    int32_t hi =  a >> 23;
-    int32_t lo = (a >> 22) & 1;
-    int32_t t  = hi + lo;
-    //printf("t=0x%04X (%d)\n", t,t);
+  int32_t t;
 
-    // 2) u = t * Q    with Q = 8 380 417 = 2^23 - 2^13 + 1
-    int32_t u  = (t << 23)
-              - (t << 13)
-              +  t;
-    //printf("u=0x%04X (%d)\n", u,u);
-    z = a - u;
-    //printf("m=0x%04X (%d)\n", z,z);
-
-
-    /* 4. z in [0, Q), reduce once more */
-    if (z >= Q) {
-        z -= Q;
-    } 
-    //printf("z=0x%04X (%d)\n", z,z);
-
-
-    return z;
+  t = (a + (1 << 22)) >> 23;
+  t = a - t*Q;
+  return t;
 }
 
 /*************************************************

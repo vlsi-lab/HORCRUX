@@ -3,8 +3,6 @@
 #include "ntt.h"
 #include "reduce.h"
 
-#include "../include/mlkem512_instructions.h"
-
 /* Code to generate zetas and zetas_inv used in the number-theoretic transform:
 
 #define KYBER_ROOT_OF_UNITY 17
@@ -68,22 +66,7 @@ const int16_t zetas[128] = {
 * Returns 16-bit integer congruent to a*b*R^{-1} mod q
 **************************************************/
 static int16_t fqmul(int16_t a, int16_t b) {
-  int16_t res;
-
-  #if ENABLE_KYBER_MONTG
-      int32_t prod;
-      prod = (int32_t)a * b;
-      asm volatile (
-          "mv a3, %[rs1]\n\t"
-          ".insn r 0x3b, 0x01, 0x5, %[rd], a3, x0\n\t"
-          : [rd] "=r" (res)
-          : [rs1] "r" (prod)
-          : "a3", "cc" );
-  #else
-      res = montgomery_reduce((int32_t)a * b);
-  #endif
-
-  return res;
+  return montgomery_reduce((int32_t)a*b);
 }
 
 /*************************************************
@@ -94,60 +77,22 @@ static int16_t fqmul(int16_t a, int16_t b) {
 *
 * Arguments:   - int16_t r[256]: pointer to input/output vector of elements of Zq
 **************************************************/
-#if ENABLE_KYBER_NTT
-
-    /* Custom/hardware-accelerated NTT */
-    void ntt(int16_t r[256]) {
-        unsigned int len, start, j, k;
-        int16_t t, zeta;
-        int32_t product;
-
-        k = 1;
-        for (len = 128; len >= 2; len >>= 1) {
-            for (start = 0; start < 256; start = j + len) {
-                zeta = zetas[k++];
-                for (j = start; j < start + len; j++) {
-                  int32_t rj   = r[j];
-                  int32_t rlen = r[j + len];
-                  int32_t t;
-
-                  asm volatile(
-                      "mul   %[t],   %[z],   %[rlen]\n\t"
-                      ".insn r 0x3b, 0x01, 0x5, %[t], %[t], x0\n\t"
-                      "sub   %[rlen], %[rj],  %[t]\n\t"
-                      "add   %[rj],   %[rj],  %[t]\n\t"
-                      : [rj] "+r"(rj), [rlen] "+r"(rlen), [t] "=&r"(t)
-                      : [z] "r"((int32_t)zeta)
-                      : "cc"
-                  );
-                  r[j]       = (int16_t)rj;
-                  r[j + len] = (int16_t)rlen;
-                }
-            }
-        }
-    }
-
-#else
-
-/* Reference NTT */
 void ntt(int16_t r[256]) {
-    unsigned int len, start, j, k;
-    int16_t t, zeta;
+  unsigned int len, start, j, k;
+  int16_t t, zeta;
 
-    k = 1;
-    for (len = 128; len >= 2; len >>= 1) {
-        for (start = 0; start < 256; start = j + len) {
-            zeta = zetas[k++];
-            for (j = start; j < start + len; j++) {
-                t = fqmul(zeta, r[j + len]);
-                r[j + len] = r[j] - t;
-                r[j]       = r[j] + t;
-            }
-        }
+  k = 1;
+  for(len = 128; len >= 2; len >>= 1) {
+    for(start = 0; start < 256; start = j + len) {
+      zeta = zetas[k++];
+      for(j = start; j < start + len; j++) {
+        t = fqmul(zeta, r[j + len]);
+        r[j + len] = r[j] - t;
+        r[j] = r[j] + t;
+      }
     }
+  }
 }
-
-#endif  /* ENABLE_KYBER_NTT */
 
 /*************************************************
 * Name:        invntt_tomont
@@ -158,82 +103,27 @@ void ntt(int16_t r[256]) {
 *
 * Arguments:   - int16_t r[256]: pointer to input/output vector of elements of Zq
 **************************************************/
-#if ENABLE_KYBER_INTT
-/* Custom/hardware-accelerated INTT */
-
 void invntt(int16_t r[256]) {
-    unsigned int start, len, j, k;
-    int16_t t, zeta;
-    const int16_t f = 1441; // mont^2/128
-    int32_t t32;
+  unsigned int start, len, j, k;
+  int16_t t, zeta;
+  const int16_t f = 1441; // mont^2/128
 
-    k = 127;
-    for (len = 2; len <= 128; len <<= 1) {
-        for (start = 0; start < 256; start = j + len) {
-            zeta = zetas[k--];
-            for (j = start; j < start + len; j++) {
-
-              int32_t rj   = r[j];
-              int32_t rlen = r[j + len];
-              int32_t sum, diff, prod;
-
-              asm volatile(
-                  "add   %[sum],  %[rj],   %[rlen]\n\t"
-                  ".insn r 0x3b, 0x01, 0x10, %[sum], %[sum], x0\n\t"
-                  "sub   %[diff], %[rlen], %[rj]\n\t"
-                  "mul   %[prod], %[z],    %[diff]\n\t"
-                  ".insn r 0x3b, 0x01, 0x5, %[prod], %[prod], x0\n\t"
-                  : [sum]  "=&r"(sum),
-                  [diff] "=&r"(diff),
-                  [prod] "=&r"(prod)
-                  : [rj]   "r"(rj),
-                  [rlen] "r"(rlen),
-                  [z]    "r"((int32_t)zeta)
-                  : "cc"
-              );
-
-              r[j]       = (int16_t)sum;   
-              r[j + len] = (int16_t)prod;     
-            }
-        }
-      }
-
-    for (j = 0; j < 256; j++) {
-      int32_t out, prod_lo;
-      asm volatile(
-          "mul    %[prod], %[x], %[f]\n\t"
-          ".insn r 0x3b, 0x1, 0x5, %[out], %[prod], x0\n\t"
-          : [out] "=&r"(out), [prod] "=&r"(prod_lo)
-          : [x] "r"((int32_t)r[j]), [f] "r"((int32_t)f)
-          : "cc", "a3"
-      );
-      r[j] = out;
-    }
-}
-
-#else
-  void invntt(int16_t r[256]) {
-    unsigned int start, len, j, k;
-    int16_t t, zeta;
-    const int16_t f = 1441; // mont^2/128
-
-    k = 127;
-    for(len = 2; len <= 128; len <<= 1) {
-      for(start = 0; start < 256; start = j + len) {
-        zeta = zetas[k--];
-        for(j = start; j < start + len; j++) {
-          t = r[j];
-          r[j] = barrett_reduce(t + r[j + len]);
-          r[j + len] = r[j + len] - t;
-          r[j + len] = fqmul(zeta, r[j + len]);
-        }
+  k = 127;
+  for(len = 2; len <= 128; len <<= 1) {
+    for(start = 0; start < 256; start = j + len) {
+      zeta = zetas[k--];
+      for(j = start; j < start + len; j++) {
+        t = r[j];
+        r[j] = barrett_reduce(t + r[j + len]);
+        r[j + len] = r[j + len] - t;
+        r[j + len] = fqmul(zeta, r[j + len]);
       }
     }
-
-    for(j = 0; j < 256; j++)
-      r[j] = fqmul(r[j], f);
   }
-#endif
+
+  for(j = 0; j < 256; j++)
+    r[j] = fqmul(r[j], f);
+}
 
 /*************************************************
 * Name:        basemul
@@ -248,95 +138,9 @@ void invntt(int16_t r[256]) {
 **************************************************/
 void basemul(int16_t r[2], const int16_t a[2], const int16_t b[2], int16_t zeta)
 {
-
-  #if ENABLE_KYBER_MONTG
-
-    int32_t r0i, r1i;
-
-    asm volatile(
-      // a6 = a[1]*b[1]; REDUCE(t1) in place
-      "mul    a3, %[a1], %[b1]\n\t"
-      ".insn  r 0x3b, 0x01, 0x5, a6, a3, x0\n\t"
-      // a4 = t1*zeta; REDUCE(t2)
-      "mul    a5, a6, %[z]\n\t"
-      ".insn  r 0x3b, 0x01, 0x5, a4, a5, x0\n\t"
-      // a3 = a[0]*b[0]; REDUCE(t3)
-      "mul    a3 , %[a0], %[b0]\n\t"
-      ".insn  r 0x3b, 0x01, 0x5, a7, a3, x0\n\t"
-      // r0 = t2 + t3
-      "add    %[r0], a7, a4\n\t"
-      // t4 = a[0]*b[1]; REDUCE(t4)
-      "mul    a5, %[a0], %[b1]\n\t"
-      ".insn  r 0x3b, 0x01, 0x5, a6, a5, x0\n\t"
-      // t5 = a[1]*b[0]; REDUCE(t5)
-      "mul    a4, %[a1], %[b0]\n\t"
-      ".insn  r 0x3b, 0x01, 0x5, a3, a4, x0\n\t"
-      // r1 = t4 + t5
-      "add    %[r1], a6, a3\n\t"
-      : [r0] "=&r"(r0i), [r1] "=&r"(r1i)
-      : [a0] "r"(a[0]), [a1] "r"(a[1]),
-        [b0] "r"(b[0]), [b1] "r"(b[1]),
-        [z]  "r"(zeta)
-      : "a3", "a4",  "a5",  "a6",  "a7","cc"
-    );
-
-    r[0] = (int16_t)r0i;
-    r[1] = (int16_t)r1i;
-
-
-  #else
-    //res = montgomery_reduce((int32_t)a * b);
-    r[0]  = fqmul(a[1], b[1]);
-    r[0]  = fqmul(r[0], zeta);
-    r[0] += fqmul(a[0], b[0]);
-    r[1]  = fqmul(a[0], b[1]);
-    r[1] += fqmul(a[1], b[0]);
-  #endif
-
-
-
+  r[0]  = fqmul(a[1], b[1]);
+  r[0]  = fqmul(r[0], zeta);
+  r[0] += fqmul(a[0], b[0]);
+  r[1]  = fqmul(a[0], b[1]);
+  r[1] += fqmul(a[1], b[0]);
 }
-
-
-//      int32_t prod1, prod2, prod3, prod4, prod5;
-//      int16_t res, res2, res3, res4, res5;
-//
-//      prod1 = (int32_t)a[1] * b[1];
-//      asm volatile (
-//          "mv a3, %[rs1]\n\t"
-//          ".insn r 0x3b, 0x01, 0x5, %[rd], a3, x0\n\t"
-//          : [rd] "=r" (res)
-//          : [rs1] "r" (prod1)
-//          : "a3", "cc" );
-//      prod2 = (int32_t)res * zeta;
-//      asm volatile (
-//          "mv a3, %[rs1]\n\t"
-//          ".insn r 0x3b, 0x01, 0x5, %[rd], a3, x0\n\t"
-//          : [rd] "=r" (res2)
-//          : [rs1] "r" (prod2)
-//          : "a3", "cc" );
-//      prod3 = (int32_t)a[0] * b[0];
-//      asm volatile (
-//          "mv a3, %[rs1]\n\t"
-//          ".insn r 0x3b, 0x01, 0x5, %[rd], a3, x0\n\t"
-//          : [rd] "=r" (res3)
-//          : [rs1] "r" (prod3)
-//          : "a3", "cc" );
-//      r[0] = res2 + res3;
-//
-//      
-//      prod4 = (int32_t)a[0] * b[1];
-//      asm volatile (
-//          "mv a3, %[rs1]\n\t"
-//          ".insn r 0x3b, 0x01, 0x5, %[rd], a3, x0\n\t"
-//          : [rd] "=r" (res4)
-//          : [rs1] "r" (prod4)
-//          : "a3", "cc" );
-//      prod5 = (int32_t)a[1] * b[0];
-//      asm volatile (
-//          "mv a3, %[rs1]\n\t"
-//          ".insn r 0x3b, 0x01, 0x5, %[rd], a3, x0\n\t"
-//          : [rd] "=r" (res5)
-//          : [rs1] "r" (prod5)
-//          : "a3", "cc" );
-//      r[1] = res4 + res5;

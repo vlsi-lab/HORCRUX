@@ -20,9 +20,4 @@
 #define ENABLE_GF_CARRYLESS   1
 #define ENABLE_KECCAK         1
 
-#define PROFILING_KEM          0
-#define PROFILING_HQC          1
-#define PROFILING_NTT          0
-
-
 #endif /* HQC1_INSTRUCTIONS_H */

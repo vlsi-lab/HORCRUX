@@ -187,8 +187,15 @@ module karats(
                 res0_2 = temp0_h;
                 res1_1 = '0;
                 res1_2 = '0;
+                res1_3 = '0;
+                res2_1 = '0;
+                res2_2 = '0;
                 result2 = res0_0;
                 result1 = '0;
+                temp1_l = '0;
+                temp1_h = '0;
+                temp2_l = '0;
+                temp2_h = '0;
             end
 
             horcrux_pkg::karats_2: begin
@@ -197,10 +204,17 @@ module karats(
                 res1_1 = temp1_l ^ reg_A;
                 res1_2 = temp1_l ^ temp1_h ^ reg_B;
                 res1_3 = temp1_h;
+                res0_0 = '0;
                 res0_1 = '0;
                 res0_2 = '0;
                 result2 = res1_3;
                 result1 = '0;
+                temp0_l = '0;
+                temp0_h = '0;
+                temp2_l = '0;
+                temp2_h = '0;
+                res2_1 = '0;
+                res2_2 = '0;
             end
 
             horcrux_pkg::karats_3 : begin
@@ -209,26 +223,56 @@ module karats(
 
                 res2_1 = temp2_l ^ reg_A;
                 res2_2 = temp2_h ^ reg_B;
+                res0_0 = '0;
                 res0_1 = '0;
                 res0_2 = '0;
                 res1_1 = '0;
                 res1_2 = '0;
+                res1_3 = '0;
+                temp0_l = '0;
+                temp0_h = '0;
+                temp1_l = '0;
+                temp1_h = '0;
 
                 result2 = res2_1;
                 result1 = res2_2;
             end
             horcrux_pkg::karats_4 : begin
+                temp0_l = '0;
+                temp0_h = '0;
+                temp1_l = '0;
+                temp1_h = '0;
+                temp2_l = '0;
+                temp2_h = '0;
+                res0_0 = '0;
+                res0_1 = '0;
+                res0_2 = '0;
+                res1_1 = '0;
+                res1_2 = '0;
+                res1_3 = '0;
+                res2_1 = '0;
+                res2_2 = '0;
                 result2 = reg_A;
                 result1 = '0;
             end
 
             default: begin 
+                temp0_l = '0;
+                temp0_h = '0;
+                temp1_l = '0;
+                temp1_h = '0;
+                temp2_l = '0;
+                temp2_h = '0;
                 result2 = '0;
                 result1 = '0;
+                res0_0 = '0;
                 res0_1 = '0;
                 res0_2 = '0;
                 res1_1 = '0;
                 res1_2 = '0;
+                res1_3 = '0;
+                res2_1 = '0;
+                res2_2 = '0;
             end
 
         endcase

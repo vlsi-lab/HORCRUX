@@ -2,8 +2,6 @@
 #include "params.h"
 #include "reduce.h"
 
-#include "../include/dilithium3_instructions.h"
-
 /*************************************************
 * Name:        montgomery_reduce
 *

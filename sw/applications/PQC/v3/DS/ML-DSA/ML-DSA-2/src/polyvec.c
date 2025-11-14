@@ -185,24 +185,7 @@ void polyveck_caddq(polyveck *v) {
   unsigned int i;
 
   for(i = 0; i < K; ++i)
-    //poly_caddq(&v->vec[i]);
-    {
-    unsigned int j;
-    for(j = 0; j < N; ++j){
-      int16_t temp;
-      temp = v->vec[i].coeffs[j];
-      #if ENABLE_DILITHIUM_CDDQ
-          asm volatile (
-                  ".insn r 0x3b, 0x01, 0xd, %[rd], %[temp], x0\n\t"
-                  : [rd] "=&r" (v->vec[i].coeffs[j])
-                  : [temp] "r" (temp)
-                  : "a3", "cc" );
-      #else
-        v->vec[i].coeffs[j] += (v->vec[i].coeffs[j] >> 31) & Q;
-      #endif
-        //a->coeffs[i] = caddq(a->coeffs[i]);
-    }
-    }
+    poly_caddq(&v->vec[i]);
 }
 
 /*************************************************

@@ -11,14 +11,11 @@
 //
 ///////////////////////////////////////////////////////////////////////////////////
 
-
 #include <stddef.h>
 #include <stdio.h>
 #include <string.h>
 #include "kem.h"
 #include "test_vectors_512.h"
-
-#include "../include/mlkem512_instructions.h"
 
 #ifdef PERF_CNT_CYCLES
     #include "core_v_mini_mcu.h"

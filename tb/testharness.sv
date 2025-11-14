@@ -36,6 +36,7 @@ module testharness #(
   import reg_pkg::*;
   import horcrux_x_heep_pkg::*;
   import addr_map_rule_pkg::*;
+  import core_v_mini_mcu_pkg::*;
 
   localparam SWITCH_ACK_LATENCY = 15;
   localparam EXT_XBAR_NMASTER_RND = USE_EXTERNAL_DEVICE_EXAMPLE ? horcrux_x_heep_pkg::EXT_XBAR_NMASTER : 1;
@@ -78,11 +79,7 @@ module testharness #(
   `endif
  
 
-  horcrux_x_heep_top #(
-      .COREV_PULP(COREV_PULP),
-      .FPU(FPU),
-      .ZFINX(ZFINX)
-  ) horcrux_x_heep_top_i (
+  horcrux_x_heep_top horcrux_x_heep_top_i (
       .clk_i,
       .rst_ni,
 
@@ -129,8 +126,8 @@ module testharness #(
   logic [core_v_mini_mcu_pkg::EXTERNAL_DOMAINS-1:0] delayed_tb_external_subsystem_powergate_switch_ack;
 
   always_ff @(negedge clk_i) begin
-    tb_cpu_subsystem_powergate_switch_ack[0] <= horcrux_x_heep_top_i.x_heep_system_i.cpu_subsystem_powergate_switch_n;
-    tb_peripheral_subsystem_powergate_switch_ack[0] <= horcrux_x_heep_top_i.x_heep_system_i.peripheral_subsystem_powergate_switch_n;
+    tb_cpu_subsystem_powergate_switch_ack[0] <= horcrux_x_heep_top_i.u_core_v_mini_mcu.cpu_subsystem_powergate_switch_no;
+    tb_peripheral_subsystem_powergate_switch_ack[0] <= horcrux_x_heep_top_i.u_core_v_mini_mcu.peripheral_subsystem_powergate_switch_no;
     //tb_memory_subsystem_banks_powergate_switch_ack[0] <= horcrux_x_heep_top_i.x_heep_system_i.memory_subsystem_banks_powergate_switch_n;
     tb_external_subsystem_powergate_switch_ack[0] <= external_subsystem_powergate_switch;
     for (int i = 0; i < SWITCH_ACK_LATENCY; i++) begin
@@ -148,14 +145,14 @@ module testharness #(
 
   always_comb begin
 `ifndef VERILATOR
-    force horcrux_x_heep_top_i.x_heep_system_i.core_v_mini_mcu_i.cpu_subsystem_powergate_switch_ack_ni = delayed_tb_cpu_subsystem_powergate_switch_ack;
-    force horcrux_x_heep_top_i.x_heep_system_i.core_v_mini_mcu_i.peripheral_subsystem_powergate_switch_ack_ni = delayed_tb_peripheral_subsystem_powergate_switch_ack;
+    force horcrux_x_heep_top_i.u_core_v_mini_mcu.cpu_subsystem_powergate_switch_ack_ni = delayed_tb_cpu_subsystem_powergate_switch_ack;
+    force horcrux_x_heep_top_i.u_core_v_mini_mcu.peripheral_subsystem_powergate_switch_ack_ni = delayed_tb_peripheral_subsystem_powergate_switch_ack;
     //force horcrux_x_heep_top_i.x_heep_system_i.core_v_mini_mcu_i.memory_subsystem_banks_powergate_switch_ack_ni = delayed_tb_memory_subsystem_banks_powergate_switch_ack;
     force external_subsystem_powergate_switch_ack = delayed_tb_external_subsystem_powergate_switch_ack;
 `else
-    horcrux_x_heep_top_i.x_heep_system_i.cpu_subsystem_powergate_switch_ack_ni = delayed_tb_cpu_subsystem_powergate_switch_ack;
-    horcrux_x_heep_top_i.x_heep_system_i.peripheral_subsystem_powergate_switch_ack_ni = delayed_tb_peripheral_subsystem_powergate_switch_ack;
-    horcrux_x_heep_top_i.x_heep_system_i.memory_subsystem_banks_powergate_switch_ack_ni = delayed_tb_memory_subsystem_banks_powergate_switch_ack;
+    horcrux_x_heep_top_i.u_core_v_mini_mcu.cpu_subsystem_powergate_switch_ack_ni = delayed_tb_cpu_subsystem_powergate_switch_ack;
+    horcrux_x_heep_top_i.u_core_v_mini_mcu.peripheral_subsystem_powergate_switch_ack_ni = delayed_tb_peripheral_subsystem_powergate_switch_ack;
+    horcrux_x_heep_top_i.u_core_v_mini_mcu.memory_subsystem_banks_powergate_switch_ack_ni = delayed_tb_memory_subsystem_banks_powergate_switch_ack;
     external_subsystem_powergate_switch_ack = delayed_tb_external_subsystem_powergate_switch_ack;
 `endif
   end

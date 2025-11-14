@@ -16,8 +16,6 @@
 #include <string.h>
 #include "parameters.h"
 
-#include "hqc5_instructions.h"
-
 /** @def KARATSUBA_THRESHOLD
  *  @brief Input size (in words) below which schoolbook_mul is used.
  */
@@ -111,46 +109,18 @@ static void schoolbook_mul(uint64_t *r, const uint64_t *a, const uint64_t *b, si
 }
 */
 
- static void karats_assembly(uint32_t  * const res, const uint32_t  * const a, const uint32_t  * const b)
- {
-   asm inline (
-      ".insn r 0x3b, 0x001, 1, %[res0], %[a0], %[b0]\n\t"  // a0 * b0
-      ".insn r 0x3b, 0x001, 2, %[res3], %[a1], %[b1]\n\t"  // a0 * b0
-      ".insn r 0x3b, 0x001, 3, %[res1], %[a0], %[b0]\n\t"  // a0 * b0
-      ".insn r 0x3b, 0x001, 4, %[res2], x0, x0\n\t"  // a0 * b0
-      : [res0] "=&r" (res[0]), [res1] "=&r" (res[1]), [res2] "=&r" (res[2]), [res3] "=&r" (res[3])  
-      : [a0] "r" (a[0]), [b0] "r" (b[0]), [a1] "r" (a[1]), [b1] "r" (b[1])     
-      : "cc"
-   );
-
-}
-
 static void schoolbook_mul(uint64_t *r, const uint64_t *a, const uint64_t *b, size_t n) {
     memset(r, 0, 2 * n * sizeof(uint64_t));
 
     for (size_t i = 0; i < n; ++i) {
         for (size_t j = 0; j < n; ++j) {
             uint64_t prod[2];
-            #if ENABLE_KARATSUBA
-                uint32_t a2[2], b2[2];
-                uint32_t c2[4];
-                a2[0] = a[i] & 0xFFFFFFFF;
-                a2[1] = a[i] >> 32;
-                b2[0] = b[j] & 0xFFFFFFFF;
-                b2[1] = b[j] >> 32;
-                asm inline("nop");
-                karats_assembly(c2, a2, b2);
-                prod[0] = ((uint64_t)c2[1] << 32) | c2[0];
-                prod[1] = ((uint64_t)c2[3] << 32) | c2[2];    
-            #else
-                gf2_mul64_hw(prod, a[i], b[j]);
-            #endif
+            gf2_mul64_hw(prod, a[i], b[j]);   // <<—— your HW path here
             r[i + j]     ^= prod[0];
             r[i + j + 1] ^= prod[1];
         }
     }
 }
-
 
 
 /**
@@ -169,21 +139,7 @@ static void karatsuba_mul(uint64_t *r, const uint64_t *a, const uint64_t *b,
                           size_t n, uint64_t *tmp_buffer) {
 
     if (n == 1) {                // exact old base case
-
-        #if ENABLE_KARATSUBA
-            uint32_t a2[2], b2[2];
-            uint32_t c2[4];
-            a2[0] = a[0] & 0xFFFFFFFF;
-            a2[1] = a[0] >> 32;
-            b2[0] = b[0] & 0xFFFFFFFF;
-            b2[1] = b[0] >> 32;
-            asm inline("nop");
-            karats_assembly(c2, a2, b2);
-            r[0] = ((uint64_t)c2[1] << 32) | c2[0];
-            r[1] = ((uint64_t)c2[3] << 32) | c2[2];    
-        #else
-            gf2_mul64_hw(r, a[0], b[0]);
-        #endif
+        gf2_mul64_hw(r, a[0], b[0]);
         return;
     }
     if (n <= KARATSUBA_THRESHOLD) {

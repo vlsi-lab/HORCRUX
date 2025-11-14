@@ -37,19 +37,8 @@ void poly_reduce(poly *a) {
 void poly_caddq(poly *a) {
   unsigned int i;
 
-
   for(i = 0; i < N; ++i){
-    #if ENABLE_DILITHIUM_CADDQ
-        asm volatile (
-                "mv a3, %[rs1]\n\t"
-                ".insn r 0x3b, 0x01, 0xd, %[rd], a3, x0\n\t"
-                : [rd] "=&r" (a->coeffs[i])
-                : [rs1] "r" (a->coeffs[i])
-                : "a3", "cc" );
-      #else
-          a->coeffs[i] += (a->coeffs[i] >> 31) & Q;
-      #endif
-      //a->coeffs[i] = caddq(a->coeffs[i]);
+    a->coeffs[i] += (a->coeffs[i] >> 31) & Q;
   }
 
 }

@@ -22,10 +22,10 @@
 #include "sign.h"
 #include "test_vectors_2.h"
 
-
-#include "core_v_mini_mcu.h"
-#include "csr.h"
-
+#ifdef PERF_CNT_CYCLES
+    #include "core_v_mini_mcu.h"
+    #include "csr.h"
+#endif
 
 
 #define TEST_KEY  1

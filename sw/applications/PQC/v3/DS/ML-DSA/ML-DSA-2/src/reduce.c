@@ -113,24 +113,12 @@
 *
 * Returns r.
 **************************************************/
-#if ENABLE_DILITHIUM_CADDQ
-  int32_t caddq(int32_t a) {
-    int32_t z;
-    asm volatile (
-            "mv a3, %[rs1]\n\t"
-            ".insn r 0x3b, 0x01, 0xd, %[rd], a3, x0\n\t"
-            : [rd] "=r" (z)
-            : [rs1] "r" (a)
-            : "a3", "cc" );
 
-    return z;
-  }
-#else
-  int32_t caddq(int32_t a) {
-    a += (a >> 31) & Q;
-    return a;
-  }
-#endif
+int32_t caddq(int32_t a) {
+  a += (a >> 31) & Q;
+  return a;
+}
+
 /*************************************************
 * Name:        freeze
 *

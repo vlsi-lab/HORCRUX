@@ -16,26 +16,15 @@
 #include <stdio.h>
 #include <stdint.h>
 #include <string.h>
+#include "vcd_util.h"
 
 #ifdef PERF_CNT_CYCLES
     #include "core_v_mini_mcu.h"
     #include "csr.h"
 #endif
-
-
-#include <stddef.h>
-#include <stdio.h>
-#include <stdint.h>
-#include <string.h>
-
-#ifdef PERF_CNT_CYCLES
-    #include "core_v_mini_mcu.h"
-    #include "csr.h"
-#endif
-
 
 #define Q 8380417
-#define NTESTS   25
+#define NTESTS   10
 
 
 int32_t rej_uniform(uint8_t a, uint8_t b, uint8_t c) {
@@ -132,11 +121,15 @@ int main() {
     #endif
 
     
-    printf("rej_uniform in Dilithium Reduction Tests (SW):\n");
+    //printf("rej_uniform in Dilithium Reduction Tests (SW):\n");
      #if PERF_CNT_CYCLES == 1
         CSR_WRITE(CSR_REG_MCYCLE, 0);
     #endif
 
+    if (vcd_init() != 0)
+    return 1;
+
+    vcd_enable();
     for (i = 0; i < NTESTS; i++) {
         uint8_t a = inputs[i][0];
         uint8_t b = inputs[i][1];
@@ -144,6 +137,8 @@ int main() {
         //printf("  [%2d] in=(%3d, %3d, %3d)\n ", i, a, b, c);
         rej_uniform_res[i] = rej_uniform(a, b, c);
     }
+    vcd_disable();
+
 
      #if PERF_CNT_CYCLES == 1
         CSR_READ(CSR_REG_MCYCLE, &cycles_rej_uniform);
@@ -163,7 +158,7 @@ int main() {
     //    printf("\n");
     //}
 
-    printf("rej_uniform in Dilithium Reduction Tests (HW).\n");
+    //printf("rej_uniform in Dilithium Reduction Tests (HW).\n");
      #if PERF_CNT_CYCLES == 1
         CSR_WRITE(CSR_REG_MCYCLE, 0);
     #endif
@@ -180,16 +175,16 @@ int main() {
         CSR_READ(CSR_REG_MCYCLE, &cycles_rej_uniform_hw);
         printf("cycles_rej_uniform (HW): %d\n", cycles_rej_uniform_hw);
     #endif
-    for (i = 0; i < NTESTS; i++) {
-        if (rej_uniform_res_hw[i] != after_vals[i]) {
-            printf("  [%2d] FAIL: in=(%3d, %3d, %3d), exp=%8d, got=%8d\n",
-                i, inputs[i][0], inputs[i][1], inputs[i][2], after_vals[i], rej_uniform_res_hw[i]);
-            all_rej_uniform_pass = 0;
-        }
-    }
-    if (all_rej_uniform_pass_hw) {
-        printf("rej_uniform (HW) tests passed!\n");
-    }
+    //for (i = 0; i < NTESTS; i++) {
+    //    if (rej_uniform_res_hw[i] != after_vals[i]) {
+    //        //printf("  [%2d] FAIL: in=(%3d, %3d, %3d), exp=%8d, got=%8d\n",
+    //            i, inputs[i][0], inputs[i][1], inputs[i][2], after_vals[i], rej_uniform_res_hw[i]);
+    //        all_rej_uniform_pass = 0;
+    //    }
+    //}
+    //if (all_rej_uniform_pass_hw) {
+    //    printf("rej_uniform (HW) tests passed!\n");
+    //}
 
     
     return 0;

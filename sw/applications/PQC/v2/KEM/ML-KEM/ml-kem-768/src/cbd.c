@@ -2,8 +2,6 @@
 #include "params.h"
 #include "cbd.h"
 
-#include "../include/mlkem768_instructions.h"
-
 /*************************************************
 * Name:        load32_littleendian
 *
@@ -68,23 +66,11 @@ static void cbd2(poly *r, const uint8_t buf[2*KYBER_N/4])
     d  = t & 0x55555555;
     d += (t>>1) & 0x55555555;
 
-        #if ENABLE_KYBER_CBD 
-            asm volatile (".insn r 0x3b, 0x1, 0x1D, %[dst], %[src], %[x]\r\n" : [dst] "=r" (r->coeffs[8 * i]    ) : [src] "r" (d), [x] "r" (0): );
-            asm volatile (".insn r 0x3b, 0x1, 0x1E, %[dst], %[src], %[x]\r\n" : [dst] "=r" (r->coeffs[8 * i + 1]) : [src] "r" (d), [x] "r" (1) : );
-            asm volatile (".insn r 0x3b, 0x1, 0x1F, %[dst], %[src], %[x]\r\n" : [dst] "=r" (r->coeffs[8 * i + 2]) : [src] "r" (d), [x] "r" (2) : );
-            asm volatile (".insn r 0x3b, 0x1, 0x20, %[dst], %[src], %[x]\r\n" : [dst] "=r" (r->coeffs[8 * i + 3]) : [src] "r" (d), [x] "r" (3) : );
-            asm volatile (".insn r 0x3b, 0x1, 0x21, %[dst], %[src], %[x]\r\n" : [dst] "=r" (r->coeffs[8 * i + 4]) : [src] "r" (d), [x] "r" (4) : );
-            asm volatile (".insn r 0x3b, 0x1, 0x22, %[dst], %[src], %[x]\r\n" : [dst] "=r" (r->coeffs[8 * i + 5]) : [src] "r" (d), [x] "r" (5) : );
-            asm volatile (".insn r 0x3b, 0x1, 0x23, %[dst], %[src], %[x]\r\n" : [dst] "=r" (r->coeffs[8 * i + 6]) : [src] "r" (d), [x] "r" (6) : );
-            asm volatile (".insn r 0x3b, 0x1, 0x24, %[dst], %[src], %[x]\r\n" : [dst] "=r" (r->coeffs[8 * i + 7]) : [src] "r" (d), [x] "r" (7) : );
-        #else
-            for (j = 0; j < 8; j++) {
-                a = (d >> (4 * j + 0)) & 0x3;
-                b = (d >> (4 * j + 2)) & 0x3;
-                r->coeffs[8 * i + j] = a - b;
-            }
-        
-        #endif
+    for(j=0;j<8;j++) {
+      a = (d >> (4*j+0)) & 0x3;
+      b = (d >> (4*j+2)) & 0x3;
+      r->coeffs[8*i+j] = a - b;
+    }
   }
 }
 
@@ -112,19 +98,11 @@ static void cbd3(poly *r, const uint8_t buf[3*KYBER_N/4])
     d += (t>>1) & 0x00249249;
     d += (t>>2) & 0x00249249;
 
-    #if ENABLE_KYBER_CBD3
-        asm volatile (".insn r 0x3b, 0x1, 0x19, %[dst], %[src], %[x]\r\n" : [dst] "=r" (r->coeffs[4 * i]    ) : [src] "r" (d), [x] "r" (0) : );
-        asm volatile (".insn r 0x3b, 0x1, 0x1A, %[dst], %[src], %[x]\r\n" : [dst] "=r" (r->coeffs[4 * i + 1]) : [src] "r" (d), [x] "r" (1) : );
-        asm volatile (".insn r 0x3b, 0x1, 0x1B, %[dst], %[src], %[x]\r\n" : [dst] "=r" (r->coeffs[4 * i + 2]) : [src] "r" (d), [x] "r" (2) : );
-        asm volatile (".insn r 0x3b, 0x1, 0x1C, %[dst], %[src], %[x]\r\n" : [dst] "=r" (r->coeffs[4 * i + 3]) : [src] "r" (d), [x] "r" (3) : );
-
-    #else
-        for (j = 0; j < 4; j++) {
-            a = (d >> (6 * j + 0)) & 0x7;
-            b = (d >> (6 * j + 3)) & 0x7;
-            r->coeffs[4 * i + j] = a - b;
-        }
-    #endif
+    for(j=0;j<4;j++) {
+      a = (d >> (6*j+0)) & 0x7;
+      b = (d >> (6*j+3)) & 0x7;
+      r->coeffs[4*i+j] = a - b;
+    }
   }
 }
 #endif

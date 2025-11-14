@@ -7,7 +7,6 @@
 #include "symmetric.h"
 #include "verify.h"
 
-#include "../include/mlkem1024_instructions.h"
 /*************************************************
 * Name:        poly_compress
 *
@@ -27,31 +26,17 @@ void poly_compress(uint8_t r[KYBER_POLYCOMPRESSEDBYTES], const poly *a)
 #if (KYBER_POLYCOMPRESSEDBYTES == 128)
 
   for(i=0;i<KYBER_N/8;i++) {
-    #if ENABLE_COMPRESS 
-        asm volatile (
-            ".insn r 0x3b, 0x1, 0x25, %[dst0], %[src0], x0\r\n"
-            ".insn r 0x3b, 0x1, 0x25, %[dst1], %[src1], x0\r\n"
-            ".insn r 0x3b, 0x1, 0x25, %[dst2], %[src2], x0\r\n"
-            ".insn r 0x3b, 0x1, 0x25, %[dst3], %[src3], x0\r\n"
-            ".insn r 0x3b, 0x1, 0x25, %[dst4], %[src4], x0\r\n"
-            ".insn r 0x3b, 0x1, 0x25, %[dst5], %[src5], x0\r\n"
-            ".insn r 0x3b, 0x1, 0x25, %[dst6], %[src6], x0\r\n"
-            ".insn r 0x3b, 0x1, 0x25, %[dst7], %[src7], x0\r\n"
-            : [dst0] "=r" (t[0]), [dst1] "=r" (t[1]), [dst2] "=r" (t[2]), [dst3] "=r" (t[3]), [dst4] "=r" (t[4]), [dst5] "=r" (t[5]), [dst6] "=r" (t[6]), [dst7] "=r" (t[7])
-            : [src0] "r" (a->coeffs[8 * i]), [src1] "r" (a->coeffs[8 * i + 1]), [src2] "r" (a->coeffs[8 * i + 2]), [src3] "r" (a->coeffs[8 * i + 3]), [src4] "r" (a->coeffs[8 * i + 4]), [src5] "r" (a->coeffs[8 * i + 5]), [src6] "r" (a->coeffs[8 * i + 6]), [src7] "r" (a->coeffs[8 * i + 7])
-            : "cc");
-    #else
-        for (j = 0; j < 8; j++) {
-                u  = a->coeffs[8 * i + j];
-                u += (u >> 15) & KYBER_Q;
-                /*    t[j] = ((((uint16_t)u << 4) + KYBER_Q/2)/KYBER_Q) & 15; */
-                d0 = u << 4;
-                d0 += 1665;
-                d0 *= 80635;
-                d0 >>= 28;
-                t[j] = d0 & 0xf;
-        }
-    #endif
+    for(j=0;j<8;j++) {
+      // map to positive standard representatives
+      u  = a->coeffs[8*i+j];
+      u += (u >> 15) & KYBER_Q;
+/*    t[j] = ((((uint16_t)u << 4) + KYBER_Q/2)/KYBER_Q) & 15; */
+      d0 = u << 4;
+      d0 += 1665;
+      d0 *= 80635;
+      d0 >>= 28;
+      t[j] = d0 & 0xf;
+    }
 
     r[0] = t[0] | (t[1] << 4);
     r[1] = t[2] | (t[3] << 4);
@@ -323,20 +308,8 @@ void poly_tomont(poly *r)
 {
   unsigned int i;
   const int16_t f = (1ULL << 32) % KYBER_Q;
-    for (i = 0; i < KYBER_N; i++) {
-      int32_t t = r->coeffs[i] * f;
-
-      #if ENABLE_KYBER_MONTG
-          asm volatile (
-              "mv a3, %[rs1]\n\t"
-              ".insn r 0x3b, 0x01, 0x5, %[rd], a3, x0\n\t"
-              : [rd] "=r" (r->coeffs[i])
-              : [rs1] "r" (t)
-              : "a3", "cc" );
-      #else
-          r->coeffs[i] = montgomery_reduce(t);
-      #endif
-  }
+  for(i=0;i<KYBER_N;i++)
+    r->coeffs[i] = montgomery_reduce((int32_t)r->coeffs[i]*f);
 }
 
 /*************************************************
@@ -350,20 +323,10 @@ void poly_tomont(poly *r)
 void poly_reduce(poly *r)
 {
   unsigned int i;
-  for (i = 0; i < KYBER_N; i++) {
-      int32_t t = r->coeffs[i];
-      #if ENABLE_KYBER_BARRETT
-          asm volatile (
-              "mv a3, %[rs1]\n\t"
-              ".insn r 0x3b, 0x01, 0x10, %[rd], a3, x0\n\t"
-              : [rd] "=r" (r->coeffs[i])
-              : [rs1] "r" (t)
-              : "a3", "cc" );
-      #else
-          r->coeffs[i] = barrett_reduce(r->coeffs[i]);
-      #endif
-  }
+  for(i=0;i<KYBER_N;i++)
+    r->coeffs[i] = barrett_reduce(r->coeffs[i]);
 }
+
 /*************************************************
 * Name:        poly_add
 *

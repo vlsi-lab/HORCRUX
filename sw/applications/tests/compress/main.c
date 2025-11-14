@@ -14,6 +14,7 @@
 #include <stdio.h>
 #include <stdint.h>
 #include <string.h>
+#include "vcd_util.h"
 
 #ifdef PERF_CNT_CYCLES
     #include "core_v_mini_mcu.h"

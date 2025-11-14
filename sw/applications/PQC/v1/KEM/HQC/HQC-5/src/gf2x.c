@@ -26,53 +26,6 @@
  */
 #define TMP_BUFFER_WORDS (16 * VEC_N_SIZE_64)
 
-
-// ---- hw-backed 64x64 -> 128 carryless multiply over GF(2) ----
-static inline void gf2_mul64_hw(uint64_t c[2], uint64_t a, uint64_t b) {
-//#if ENABLE_KARATSUBA   // (same flag you used before)
-//    uint32_t a2[2], b2[2], c2[4];
-//
-//    a2[0] = (uint32_t)(a & 0xFFFFFFFFu);
-//    a2[1] = (uint32_t)(a >> 32);
-//    b2[0] = (uint32_t)(b & 0xFFFFFFFFu);
-//    b2[1] = (uint32_t)(b >> 32);
-//
-//    asm inline(
-//        // Your four custom micro-ops; keep the exact encodings you had
-//        ".insn r 0x3b, 0x001, 1, %[res0], %[a0], %[b0]\n\t"
-//        ".insn r 0x3b, 0x001, 2, %[res3], %[a1], %[b1]\n\t"
-//        ".insn r 0x3b, 0x001, 3, %[res1], %[a0], %[b0]\n\t"
-//        ".insn r 0x3b, 0x001, 4, %[res2], x0,   x0   \n\t"
-//        : [res0] "=&r"(c2[0]), [res1] "=&r"(c2[1]),
-//          [res2] "=&r"(c2[2]), [res3] "=&r"(c2[3])
-//        : [a0] "r"(a2[0]), [b0] "r"(b2[0]), [a1] "r"(a2[1]), [b1] "r"(b2[1])
-//        : "cc"
-//    );
-//
-//    c[0] = ((uint64_t)c2[1] << 32) | c2[0];
-//    c[1] = ((uint64_t)c2[3] << 32) | c2[2];
-//#else
-    // Software fallback: same signature as your old base_mul (GF(2) carryless)
-    // Simple portable version (not nibble-table; keep it short)
-    uint64_t lo = 0, hi = 0;
-    for (int k = 0; k < 64; ++k) {
-        uint64_t mask = -((a >> k) & 1ULL);
-        if (k == 0) {
-            lo ^= b & mask;
-        } else {
-            lo ^= (b << k) & mask;
-            hi ^= (b >> (64 - k)) & mask;
-        }
-    }
-    c[0] = lo; c[1] = hi;
-//#endif
-}
-
-
-
-
-
-
 /**
  * @brief Schoolbook multiplication over GF(2).
  *
@@ -82,10 +35,9 @@ static inline void gf2_mul64_hw(uint64_t c[2], uint64_t a, uint64_t b) {
  * @param[in]  a  Operand a, size n words.
  * @param[in]  b  Operand b, size n words.
  * @param[in]  n  Number of 64-bit words in a and b.
-
+ */
 static void schoolbook_mul(uint64_t *r, const uint64_t *a, const uint64_t *b, size_t n) {
     memset(r, 0, 2 * n * sizeof(uint64_t));
-
     for (size_t i = 0; i < n; i++) {
         uint64_t ai = a[i];
         for (int bit = 0; bit < 64; bit++) {
@@ -105,23 +57,7 @@ static void schoolbook_mul(uint64_t *r, const uint64_t *a, const uint64_t *b, si
             }
         }
     }
-
 }
-*/
-
-static void schoolbook_mul(uint64_t *r, const uint64_t *a, const uint64_t *b, size_t n) {
-    memset(r, 0, 2 * n * sizeof(uint64_t));
-
-    for (size_t i = 0; i < n; ++i) {
-        for (size_t j = 0; j < n; ++j) {
-            uint64_t prod[2];
-            gf2_mul64_hw(prod, a[i], b[j]);   // <<—— your HW path here
-            r[i + j]     ^= prod[0];
-            r[i + j + 1] ^= prod[1];
-        }
-    }
-}
-
 
 /**
  * @brief Karatsuba multiplication using a caller-supplied temporary buffer.
@@ -135,33 +71,37 @@ static void schoolbook_mul(uint64_t *r, const uint64_t *a, const uint64_t *b, si
  * @param[in]  n            Number of 64-bit words in a and b.
  * @param[in]  tmp_buffer  Temporary buffer, size >= 8*n words (child calls use remainder).
  */
-static void karatsuba_mul(uint64_t *r, const uint64_t *a, const uint64_t *b,
-                          size_t n, uint64_t *tmp_buffer) {
-
-    if (n == 1) {                // exact old base case
-        gf2_mul64_hw(r, a[0], b[0]);
-        return;
-    }
+static void karatsuba_mul(uint64_t *r, const uint64_t *a, const uint64_t *b, size_t n, uint64_t *tmp_buffer) {
     if (n <= KARATSUBA_THRESHOLD) {
         schoolbook_mul(r, a, b, n);
         return;
     }
 
-    size_t m  = n >> 1;
+    size_t m = n >> 1;
     size_t n0 = m;
     size_t n1 = n - m;
 
-    uint64_t *z0   = tmp_buffer;           // 2n
-    uint64_t *z2   = z0   + 2 * n;         // 2n
-    uint64_t *zmid = z2   + 2 * n;         // 2n
-    uint64_t *ta   = zmid + 2 * n;         // n  (uses n1)
-    uint64_t *tb   = ta   + n;             // n  (uses n1)
+    /* take successive chunks of tmp_buffer for each intermediate result */
+    uint64_t *z0 = tmp_buffer;   /* low-half product, size 2*n words */
+    uint64_t *z2 = z0 + 2 * n;   /* high-half product, size 2*n words */
+    uint64_t *zmid = z2 + 2 * n; /* middle product, size 2*n words */
+
+    /* ta and tb hold the sums of low and high halves: */
+    /* ta[i] = a0[i] XOR a1[i], tb[i] = b0[i] XOR b1[i] for i < n1 */
+    uint64_t *ta = zmid + 2 * n;
+    uint64_t *tb = ta + n;
+
+    /* buffer for child recursions */
     uint64_t *child_buffer = tmp_buffer + 8 * n;
 
-    karatsuba_mul(z0, a,      b,      n0, child_buffer);
-    karatsuba_mul(z2, a + m,  b + m,  n1, child_buffer);
+    /* 1) low * low */
+    karatsuba_mul(z0, a, b, n0, child_buffer);
 
-    for (size_t i = 0; i < n1; ++i) {
+    /* 2) high * high */
+    karatsuba_mul(z2, a + m, b + m, n1, child_buffer);
+
+    /* 3) (a0+a1)*(b0+b1) */
+    for (size_t i = 0; i < n1; i++) {
         uint64_t loa = (i < n0 ? a[i] : 0);
         uint64_t lob = (i < n0 ? b[i] : 0);
         ta[i] = loa ^ a[m + i];
@@ -169,16 +109,17 @@ static void karatsuba_mul(uint64_t *r, const uint64_t *a, const uint64_t *b,
     }
     karatsuba_mul(zmid, ta, tb, n1, child_buffer);
 
+    /* 4) assemble into r */
     memset(r, 0, 2 * n * sizeof(uint64_t));
-    for (size_t i = 0; i < 2 * n0; ++i) r[i] ^= z0[i];
-    for (size_t i = 0; i < 2 * n1; ++i) r[2 * m + i] ^= z2[i];
-    for (size_t i = 0; i < 2 * n1; ++i) {
+    for (size_t i = 0; i < 2 * n0; i++) r[i] ^= z0[i];
+    for (size_t i = 0; i < 2 * n1; i++) r[2 * m + i] ^= z2[i];
+    for (size_t i = 0; i < 2 * n1; i++) {
         uint64_t z0i = (i < 2 * n0 ? z0[i] : 0);
         uint64_t z2i = (i < 2 * n1 ? z2[i] : 0);
-        r[m + i] ^= (zmid[i] ^ z0i ^ z2i);
+        uint64_t mid = zmid[i] ^ z0i ^ z2i;
+        r[m + i] ^= mid;
     }
 }
-
 
 /**
  * @brief Modular reduction of a degree < 2*n polynomial mod (X^n - 1).
