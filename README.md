@@ -229,7 +229,7 @@ To cite our paper:
       title = {{HORCRUX} - A Lightweight {PQC}-{RISC}-V {eXtension} Architecture},   
       howpublished = {Cryptology {ePrint} Archive, Paper 2025/1934},  
       year = {2025},  
-      url = {https://eprint.iacr.org/2025/1934}  
+      url = { https://eprint.iacr.org/2025/1934 }  
 }  
 
 ## 👥 Authors
