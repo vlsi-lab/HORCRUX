@@ -4,6 +4,13 @@ HORCRUX is a modular hardware–software framework for accelerating Post-Quantum
 
 It provides a unified environment to design, simulate, and test cryptographic accelerators and their integration within the [X-HEEP](https://github.com/esl-epfl/x-heep) SoC platform .
 
+The HORCRUX architecture integrates a dedicated cryptographic coprocessor tightly coupled to the RISC-V core through the CV-X-IF interface. This coprocessor, internally referred to as the **PQ-ALU**, executes PQC-specific instructions issued from the main pipeline. A lightweight decoder stage parses the custom opcodes, routes operands (`rs1`, `rs2`, `rs3`) to the appropriate functional unit, and a committer stage writes results back to the core in program order, preserving standard RISC-V execution semantics.
+
+Internally, the PQ-ALU is a modular datapath exposing multiple specialized blocks behind a uniform 32-bit interface: a Keccak unit for SHA3/SHAKE primitives, Montgomery/Barrett modular reduction for lattice schemes, CBD and rejection-based samplers, compression for quantized coefficients, binary Galois-field engines for code-based crypto, and a prime-field unit for CROSS-style arithmetic. Each block can be developed and synthesized independently while sharing the same custom-instruction framework, making HORCRUX a flexible platform for experimenting with PQC accelerators.
+
+![Coprocessor and PQ-ALU Schematics](images/structure-acc.pdf)
+
+
 
 ## 📁 Repository Structure
 ```bash
