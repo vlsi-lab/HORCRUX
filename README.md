@@ -1,4 +1,4 @@
-# HORCRUX 
+# Raise the Shields: A Modular RISC-V Extension for Post Quantum Cryptography 
 
 HORCRUX is a modular hardware–software framework for accelerating Post-Quantum Cryptography (PQC) primitives and algorithms on RISC-V.
 
@@ -57,10 +57,16 @@ make app-tests-ntt_dilithium TESTS=ntt_dilithium
 Available values for TESTS include:
 
 | `barrett_kyber` | `cbd_eta1` | `cbd_eta2` | `cbd_eta3` |
-| `cbd_eta4` | `compress` | `convert_restr_vec_to_fp` | `double_zero_norm` |  
-| `G_restr_to_value` | `G_restr_vec_by_matrix` | `G_synd_minus_vec_scaled` | `G_vec_by_matrix` | `G_vec_by_restr_vec_scaled` |  
-| `G_vec_by_vec_pointwise` | `gf_carryless` | `intt_dilithium` | `intt_kyber` | `karats` | `keccak` | `montg_dilithium` |    |`montg_falcon`|`montg_kyber`|`montg_newhope`|`montg_ntrup`|`ntt_dilithium`|`ntt_kyber`|`rej_uniform`|`rej8x4`|`rej12x2`|  
-|`rej23x2`|`restr_vec_by_matrix`|`synd_minus_vec_scaled`|`vec_by_matrix`|`vec_by_restr_vec_scaled`|`vec_by_vec_pointwise`|
+|:---------------:|:----------:|:----------:|:----------:|
+| `cbd_eta4` | `compress` | `convert_restr_vec_to_fp` | `double_zero_norm` |
+| `G_restr_to_value` | `G_restr_vec_by_matrix` | `G_synd_minus_vec_scaled` | `G_vec_by_matrix` |
+| `G_vec_by_restr_vec_scaled` | `G_vec_by_vec_pointwise` | `gf_carryless` | `intt_dilithium` |
+| `intt_kyber` | `karats` | `keccak` | `montg_dilithium` |
+| `montg_falcon` | `montg_kyber` | `montg_newhope` | `montg_ntrup` |
+| `ntt_dilithium` | `ntt_kyber` | `rej_uniform` | `rej8x4` |
+| `rej12x2` | `rej23x2` | `restr_vec_by_matrix` | `synd_minus_vec_scaled` |
+| `vec_by_matrix` | `vec_by_restr_vec_scaled` | `vec_by_vec_pointwise` |  |
+
 
 Besides the `tests` folder, two other folders, `tests-simple` and `tests-custom`, are used to distinguish the software baselines and the custom instructions. This division helps for the post-synthesis power analyses.
 
@@ -72,16 +78,7 @@ make questasim-sim
 ```
 And then run the application of your choice:
 ```
-make run-v1-KEM-ML-KEM-ml-kem-512 SCHEME=KEM ALG=ML-KEM VERSION=ml-kem-512 V=v1
-```
-
-Also in this case you can use the helper script [`scripts/compile_apps.sh`](./compile_apps.sh).
-```
-# Run an already compiled ML-KEM-512 app
-./compile_apps.sh -V v2 -S KEM -A ML-KEM -R ml-kem-512 --no-app
-
-# Batch mode: compile and run all v2 apps, continuing even on errors
-./compile_apps.sh -V v2 --all --keep-going
+make run-tests-$(name_of_the_test) TESTS=$(name_of_the_test)
 ```
 
 ## 🔧 ASIC
