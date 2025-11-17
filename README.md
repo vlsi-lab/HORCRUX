@@ -60,7 +60,7 @@ The sw/ directory contains all software components, including:
 
 You can run an individual instruction test with:
 ```
-make app-tests-ntt_dilithium TESTS=ntt_dilithium
+make app-tests-keccak TESTS=keccak
 ```
 Available values for TESTS include:
 
@@ -86,7 +86,7 @@ make questasim-sim
 ```
 And then run the application of your choice:
 ```
-make run-tests-$(name_of_the_test) TESTS=$(name_of_the_test)
+make run-tests$(TESTS) TESTS=$(TESTS)
 ```
 
 ## 🔧 ASIC
@@ -99,15 +99,15 @@ make asic
 All the post-synthesis functional simulations and power analyses are supported:
 ```
 make questasim-sim-postsynth
-run-tests-postsynth-$(TESTS) TESTS=montg_dilithium
+run-tests-postsynth-$(TESTS) TESTS=$(TESTS)
 ```
 To obtain the post-synthesis power results for a specific test, for both the software baseline and the custom instruction:
 ```
 make questasim-sim-postsynth
-make app-tests-simple-keccak VER=simple TESTS=keccak
-make app-tests-custom-keccak VER=custom TESTS=keccak
-make run-tests-postsynth-simple-keccak VER=simple TESTS=keccak
-make run-tests-postsynth-custom-keccak VER=custom TESTS=keccak
+make app-tests-simple-$(TESTS) VER=simple TESTS=$(TESTS)
+make app-tests-custom-$(TESTS) VER=custom TESTS=$(TESTS)
+make run-tests-postsynth-simple-$(TESTS) VER=simple TESTS=$(TESTS)
+make run-tests-postsynth-custom-$(TESTS) VER=custom TESTS=$(TESTS)
 ```
 The helper script [`scripts/get_power_res_postsynth.sh`](./get_power_res_postsynth.sh) can be used to automatically compile and run the power analyses on the tests. The user can choose whether to run all tests, just the simple, custom or specific cases. Some examples:
 ```
