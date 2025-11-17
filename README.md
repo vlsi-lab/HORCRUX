@@ -8,7 +8,7 @@ The HORCRUX architecture integrates a dedicated cryptographic coprocessor tightl
 
 Internally, the PQ-ALU is a modular datapath exposing multiple specialized blocks behind a uniform 32-bit interface: a Keccak unit for SHA3/SHAKE primitives, Montgomery/Barrett modular reduction for lattice schemes, CBD and rejection-based samplers, compression for quantized coefficients, binary Galois-field engines for code-based crypto, and a prime-field unit for CROSS-style arithmetic. Each block can be developed and synthesized independently while sharing the same custom-instruction framework, making HORCRUX a flexible platform for experimenting with PQC accelerators.
 
-![Coprocessor and PQ-ALU Schematics](images/structure-acc.pdf)
+![Coprocessor and PQ-ALU Schematics](images/structure-acc.svg)
 
 
 
