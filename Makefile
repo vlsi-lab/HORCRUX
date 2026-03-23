@@ -105,8 +105,6 @@ mcu-gen:
 
 app-tests-$(TESTS):
 	$(MAKE) -C sw applications/tests/$(TESTS)/main.hex TARGET=$(TARGET) LINKER=$(LINKER)
-	riscv32-unknown-elf-objdump -d sw/applications/tests/$(TESTS)/main.elf > dis/test-$(TESTS).s
-	riscv32-unknown-elf-objdump -S sw/applications/tests/$(TESTS)/main.elf > dis/test-$(TESTS).disasm
 	@echo "### DONE! App app-optimized-test-$(TESTS) generated successfully!"
 
 run-tests-$(TESTS):
@@ -125,8 +123,6 @@ run-tests-$(TESTS)-gui:
 
 app-$(V)-$(SCHEME)-$(ALG)-$(VERSION):
 	$(MAKE) -C sw applications/PQC/$(V)/$(SCHEME)/$(ALG)/$(VERSION)/main.hex TARGET=$(TARGET) LINKER=$(LINKER)
-	riscv32-unknown-elf-objdump -d  sw/applications/PQC/$(V)/$(SCHEME)/$(ALG)/$(VERSION)/main.elf > dis/test-$(V)-$(SCHEME)-$(ALG)-$(VERSION).s
-	riscv32-unknown-elf-objdump -S  sw/applications/PQC/$(V)/$(SCHEME)/$(ALG)/$(VERSION)/main.elf > dis/test-$(V)-$(SCHEME)-$(ALG)-$(VERSION).disasm
 	riscv32-unknown-elf-size sw/applications/PQC/$(V)/$(SCHEME)/$(ALG)/$(VERSION)/main.elf
 	@echo "### DONE! App app-$(SCHEME)-$(ALG)-$(VERSION) generated successfully!"
 	@echo "Code size (.text): $$(riscv32-unknown-elf-size sw/applications/PQC/$(V)/$(SCHEME)/$(ALG)/$(VERSION)/main.elf | sed -n '2p' | awk '{print $$1}') bytes"
