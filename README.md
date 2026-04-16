@@ -10,11 +10,11 @@ We chose the name **HORCRUX** to reflect the modular and multi-part nature of ou
 
 Below is the complete lore of the Horcruxes, along with the links to the active branches representing our first three versions:
 
-* **Tom Riddle's Diary:** Destroyed by Harry Potter with a Basilisk fang in the Chamber of Secrets. *(Future/Reserved)*
-* **Marvolo Gaunt’s Ring:** Contained the Resurrection Stone; destroyed by Albus Dumbledore with Gryffindor's sword. *(Future/Reserved)*
 * **[Salazar Slytherin’s Locket](tree/locket):** Stolen from the Gaunt shack; destroyed by Ron Weasley with Gryffindor's sword. 
 * **[Helga Hufflepuff’s Cup](tree/cup):** Stolen from Hepzibah Smith; destroyed by Hermione Granger with a Basilisk fang. 
-* **[Rowena Ravenclaw’s Diadem](tree/diadem):** Hidden in the Room of Requirement; destroyed by Vincent Crabbe's Fiendfyre. 
+* **[Rowena Ravenclaw’s Diadem](tree/diadem):** Hidden in the Room of Requirement; destroyed by Vincent Crabbe's Fiendfyre.
+* * **Tom Riddle's Diary:** Destroyed by Harry Potter with a Basilisk fang in the Chamber of Secrets. *(Future/Reserved)*
+* **Marvolo Gaunt’s Ring:** Contained the Resurrection Stone; destroyed by Albus Dumbledore with Gryffindor's sword. *(Future/Reserved)*
 * **Nagini:** Voldemort's snake, destroyed by Neville Longbottom with Gryffindor's sword in the Deathly Hallows. *(Future/Reserved)*
 * **Harry Potter (Accidental):** The piece of soul within Harry was destroyed by Voldemort himself in the Forbidden Forest. *(Future/Reserved)*
 
