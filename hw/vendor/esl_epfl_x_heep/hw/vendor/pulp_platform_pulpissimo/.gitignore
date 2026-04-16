@@ -1,9 +1,0 @@
-modelsim.ini
-xcelium.d/
-xrun.history
-xrun.log
-.bender
-bender
-work/
-compile.tcl
-working_dir/
